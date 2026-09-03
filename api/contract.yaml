@@ -1,0 +1,328 @@
+openapi: 3.0.3
+info:
+  title: ShareTrip Contract Service API
+  description: API for managing company contracts and checking service availability.
+  version: 0.1.0
+
+paths:
+  /contracts:
+    post:
+      operationId: createContract
+      summary: Create a company contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractRequest"
+      responses:
+        "201":
+          description: Contract created in draft status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /contracts/{contract_id}:
+    get:
+      operationId: getContract
+      summary: Get a contract by identifier
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Contract found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ContractNotFound"
+
+  /companies/{company_id}/contracts/active:
+    get:
+      operationId: getActiveCompanyContract
+      summary: Get the active contract of a company
+      parameters:
+        - $ref: "#/components/parameters/CompanyId"
+      responses:
+        "200":
+          description: Active contract found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ActiveContractNotFound"
+
+  /contracts/{contract_id}/sign:
+    post:
+      operationId: signContract
+      summary: Sign a draft contract
+      description: Changes the contract status from draft to active.
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Contract signed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/ContractNotFound"
+        "409":
+          $ref: "#/components/responses/ContractConflict"
+
+  /companies/{company_id}/services/{service_code}/availability:
+    get:
+      operationId: checkServiceAvailability
+      summary: Check whether a service is available to a company
+      description: >-
+        Uses the company's active contract. If there is no active contract,
+        denial reasons are selected in this order: suspended contract, draft
+        contract, terminated contract, no contract. A business denial is
+        returned with HTTP 200, allowed=false and a reason.
+      parameters:
+        - $ref: "#/components/parameters/CompanyId"
+        - $ref: "#/components/parameters/ServiceCode"
+      responses:
+        "200":
+          description: Availability check completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceAvailabilityResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+components:
+  parameters:
+    ContractId:
+      name: contract_id
+      in: path
+      required: true
+      description: Contract identifier
+      schema:
+        type: string
+        format: uuid
+    CompanyId:
+      name: company_id
+      in: path
+      required: true
+      description: Company identifier
+      schema:
+        type: string
+        format: uuid
+    ServiceCode:
+      name: service_code
+      in: path
+      required: true
+      description: Service being checked
+      schema:
+        $ref: "#/components/schemas/ServiceCode"
+
+  responses:
+    BadRequest:
+      description: Request parameters or body are invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ContractNotFound:
+      description: Contract was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ActiveContractNotFound:
+      description: The company has no active contract
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ContractConflict:
+      description: >-
+        The status transition is invalid or the company already has an active
+        contract
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ContractStatus:
+      type: string
+      enum:
+        - draft
+        - active
+        - suspended
+        - terminated
+
+    ServiceCode:
+      type: string
+      enum:
+        - trip_creation
+        - trip_participants
+        - notifications
+
+    ContractService:
+      type: object
+      required:
+        - code
+        - enabled
+      properties:
+        code:
+          $ref: "#/components/schemas/ServiceCode"
+        enabled:
+          type: boolean
+      additionalProperties: false
+
+    CreateContractRequest:
+      type: object
+      required:
+        - company_id
+        - valid_from
+        - services
+      properties:
+        company_id:
+          type: string
+          format: uuid
+        valid_from:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Exclusive end of the validity period; null means no end date.
+        services:
+          type: array
+          description: Service codes must be unique within a contract.
+          items:
+            $ref: "#/components/schemas/ContractService"
+      additionalProperties: false
+
+    Contract:
+      type: object
+      required:
+        - id
+        - company_id
+        - status
+        - valid_from
+        - valid_until
+        - services
+      properties:
+        id:
+          type: string
+          format: uuid
+        company_id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/ContractStatus"
+        valid_from:
+          type: string
+          format: date-time
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Exclusive end of the validity period; null means no end date.
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractService"
+      additionalProperties: false
+
+    ContractResponse:
+      type: object
+      required:
+        - contract
+      properties:
+        contract:
+          $ref: "#/components/schemas/Contract"
+      additionalProperties: false
+
+    ServiceAvailabilityResponse:
+      oneOf:
+        - $ref: "#/components/schemas/ServiceAllowedResponse"
+        - $ref: "#/components/schemas/ServiceDeniedResponse"
+
+    ServiceAllowedResponse:
+      type: object
+      required:
+        - company_id
+        - service_code
+        - allowed
+      properties:
+        company_id:
+          type: string
+          format: uuid
+        service_code:
+          $ref: "#/components/schemas/ServiceCode"
+        allowed:
+          type: boolean
+          enum:
+            - true
+      additionalProperties: false
+
+    ServiceDeniedResponse:
+      type: object
+      required:
+        - company_id
+        - service_code
+        - allowed
+        - reason
+      properties:
+        company_id:
+          type: string
+          format: uuid
+        service_code:
+          $ref: "#/components/schemas/ServiceCode"
+        allowed:
+          type: boolean
+          enum:
+            - false
+        reason:
+          $ref: "#/components/schemas/ServiceDenialReason"
+      additionalProperties: false
+
+    ServiceDenialReason:
+      type: string
+      description: Present only when allowed is false.
+      enum:
+        - contract_not_found
+        - contract_not_active
+        - contract_suspended
+        - contract_terminated
+        - contract_not_started
+        - contract_expired
+        - service_not_in_contract
+        - service_disabled
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - invalid_request
+            - contract_not_found
+            - active_contract_not_found
+            - invalid_status_transition
+            - active_contract_already_exists
+        message:
+          type: string
+      additionalProperties: false
