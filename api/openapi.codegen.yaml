@@ -1,0 +1,5 @@
+package: gen
+generate:
+  fiber-server: true
+  models: true
+output: gen/openapi.gen.go
