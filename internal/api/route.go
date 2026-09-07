@@ -1,19 +1,35 @@
 package api
 
 import (
-	"github.com/anton415/sharetrip-contract/gen"
+	"context"
 
+	"github.com/anton415/sharetrip-contract/gen"
+	"github.com/anton415/sharetrip-contract/internal/service"
 	"github.com/gofiber/fiber/v2"
 )
 
-type Server struct{}
+type ContractService interface {
+	CreateContract(
+		context.Context,
+		service.CreateContractRequest,
+	) (service.CreateContractResponse, error)
+
+	SignContract(
+		context.Context,
+		service.SignContractRequest,
+	) (service.SignContractResponse, error)
+}
+
+type Server struct {
+	contracts ContractService
+}
 
 var _ gen.ServerInterface = (*Server)(nil)
 
-func NewServer() *Server {
-	return &Server{}
+func NewServer(contracts ContractService) *Server {
+	return &Server{contracts: contracts}
 }
 
-func RegisterRoutes(router fiber.Router) {
-	gen.RegisterHandlers(router, NewServer())
+func RegisterRoutes(router fiber.Router, contracts ContractService) {
+	gen.RegisterHandlers(router, NewServer(contracts))
 }

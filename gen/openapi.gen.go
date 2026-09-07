@@ -76,6 +76,15 @@ type SignedContract struct {
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
 
+// Conflict defines model for Conflict.
+type Conflict = ErrorResponse
+
+// InternalServerError defines model for InternalServerError.
+type InternalServerError = ErrorResponse
+
+// NotFound defines model for NotFound.
+type NotFound = ErrorResponse
+
 // CreateContractJSONRequestBody defines body for CreateContract for application/json ContentType.
 type CreateContractJSONRequestBody = CreateContractRequest
 
@@ -87,7 +96,7 @@ type ServerInterface interface {
 	// CreateContract Create a draft contract
 	// (POST /create_contract)
 	CreateContract(c *fiber.Ctx) error
-	// SignContract Return an active contract stub
+	// SignContract Sign an existing draft contract
 	// (POST /sign_contract)
 	SignContract(c *fiber.Ctx) error
 }

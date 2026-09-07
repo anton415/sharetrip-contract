@@ -3,23 +3,22 @@
 
 CREATE TABLE contracts (
     id UUID PRIMARY KEY,
-    company_id UUID NOT NULL,
+    client_id UUID NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
-    valid_from TIMESTAMPTZ NOT NULL,
-    valid_until TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expired_at TIMESTAMPTZ,
+
     CONSTRAINT contracts_status_check CHECK (
         status IN ('draft', 'active', 'suspended', 'terminated')
-    ),
-    CONSTRAINT contracts_validity_period_check CHECK (
-        valid_until IS NULL OR valid_until > valid_from
     )
 );
 
-CREATE INDEX contracts_company_id_idx
-    ON contracts (company_id);
+CREATE INDEX contracts_client_id_idx
+    ON contracts (client_id);
 
-CREATE UNIQUE INDEX contracts_one_active_per_company_idx
-    ON contracts (company_id)
+CREATE UNIQUE INDEX contracts_one_active_per_client_idx
+    ON contracts (client_id)
     WHERE status = 'active';
 
 CREATE TABLE contract_services (

@@ -7,7 +7,7 @@ paths:
     post:
       operationId: create_contract
       summary: Create a draft contract
-      description: Transport stub. Returns a contract without saving it.
+      description: Creates a draft contract and saves it in PostgreSQL.
       requestBody:
         required: true
         content:
@@ -16,18 +16,20 @@ paths:
               $ref: '#/components/schemas/CreateContractRequest'
       responses:
         '201':
-          description: Draft contract created in memory
+          description: Draft contract created and saved
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateContractResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /sign_contract:
     post:
       operationId: sign_contract
-      summary: Return an active contract stub
-      description: Transport stub. Does not look up or update an existing contract.
+      summary: Sign an existing draft contract
+      description: Loads an existing contract and changes its state from draft to active in a transaction.
       requestBody:
         required: true
         content:
@@ -36,15 +38,39 @@ paths:
               $ref: '#/components/schemas/SignContractRequest'
       responses:
         '200':
-          description: Requested identifier and active status
+          description: Contract signed and saved
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SignContractResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   responses:
+    NotFound:
+      description: Contract not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Contract cannot be signed in its current state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     BadRequest:
       description: Invalid request body
       content:
