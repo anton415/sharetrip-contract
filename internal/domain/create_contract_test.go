@@ -10,6 +10,7 @@ import (
 )
 
 func TestCreateContract(t *testing.T) {
+	t.Parallel()
 	clientID, err := NewClientID(uuid.New())
 	if err != nil {
 		t.Fatalf("NewClientID(): %v", err)
@@ -25,6 +26,7 @@ func TestCreateContract(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			before := time.Now().UTC()
 			response, err := CreateContract(CreateContractRequest{
 				ClientID:  clientID,
@@ -71,6 +73,7 @@ func TestCreateContract(t *testing.T) {
 }
 
 func TestCreateContractRejectsEmptyClientID(t *testing.T) {
+	t.Parallel()
 	response, err := CreateContract(CreateContractRequest{})
 	if !errors.Is(err, ErrInvalidClientID) {
 		t.Fatalf("CreateContract() error = %v, want %v", err, ErrInvalidClientID)

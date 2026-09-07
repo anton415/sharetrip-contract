@@ -17,6 +17,7 @@ import (
 )
 
 func TestHTTPPostgresContractLifecycle(t *testing.T) {
+	t.Parallel()
 	pool, observer := newHTTPTestDatabase(t)
 	app := testApp(service.NewService(pool))
 	clientID := uuid.New()
@@ -25,7 +26,7 @@ func TestHTTPPostgresContractLifecycle(t *testing.T) {
 		fmt.Sprintf(`{"client_id":%q,"expired_at":%q}`, clientID, expires.Format(time.RFC3339)))
 	var created gen.CreateContractResponse
 	err := json.NewDecoder(response.Body).Decode(&created)
-	response.Body.Close()
+	closeResponseBody(t, response)
 	if err != nil || response.StatusCode != 201 {
 		t.Fatalf("create response: status=%d, error=%v", response.StatusCode, err)
 	}

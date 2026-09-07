@@ -8,6 +8,7 @@ import (
 )
 
 func TestSignContract(t *testing.T) {
+	t.Parallel()
 	request := SignContractRequest{Contract: draftContractForTest()}
 	original := request.Contract
 	before := time.Now().UTC()
@@ -31,12 +32,14 @@ func TestSignContract(t *testing.T) {
 }
 
 func TestSignContractRejectsInvalidTransition(t *testing.T) {
+	t.Parallel()
 	for _, status := range []ContractStatus{
 		ContractStatusActive,
 		ContractStatusSuspended,
 		ContractStatusTerminated,
 	} {
 		t.Run(string(status), func(t *testing.T) {
+			t.Parallel()
 			contract := draftContractForTest()
 			contract.status = status
 			response, err := SignContract(SignContractRequest{Contract: contract})

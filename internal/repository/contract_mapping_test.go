@@ -12,14 +12,17 @@ import (
 )
 
 func TestContractMappingRoundTrip(t *testing.T) {
+	t.Parallel()
 	for _, status := range []string{"draft", "active", "suspended", "terminated"} {
 		t.Run(status, func(t *testing.T) {
+			t.Parallel()
 			for _, withExpiration := range []bool{false, true} {
 				name := "without expiration"
 				if withExpiration {
 					name = "with expiration"
 				}
 				t.Run(name, func(t *testing.T) {
+					t.Parallel()
 					want := contractRowForTest()
 					want.Status = status
 					if !withExpiration {
@@ -47,6 +50,7 @@ func TestContractMappingRoundTrip(t *testing.T) {
 }
 
 func TestToDomainContractRejectsInvalidRow(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		change  func(*entity.Contract)
@@ -59,6 +63,7 @@ func TestToDomainContractRejectsInvalidRow(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			row := contractRowForTest()
 			tt.change(&row)
 			got, err := toDomainContract(row)
@@ -73,7 +78,9 @@ func TestToDomainContractRejectsInvalidRow(t *testing.T) {
 }
 
 func TestContractMappingCopiesExpiration(t *testing.T) {
+	t.Parallel()
 	t.Run("input entity cannot change domain", func(t *testing.T) {
+		t.Parallel()
 		row := contractRowForTest()
 		want := *row.ExpiredAt
 		contract, err := toDomainContract(row)
@@ -87,6 +94,7 @@ func TestContractMappingCopiesExpiration(t *testing.T) {
 	})
 
 	t.Run("output entity cannot change domain", func(t *testing.T) {
+		t.Parallel()
 		row := contractRowForTest()
 		want := *row.ExpiredAt
 		contract, err := toDomainContract(row)

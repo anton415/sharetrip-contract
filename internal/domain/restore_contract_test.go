@@ -8,6 +8,7 @@ import (
 )
 
 func TestRestoreContractPreservesState(t *testing.T) {
+	t.Parallel()
 	for _, status := range []ContractStatus{
 		ContractStatusDraft,
 		ContractStatusActive,
@@ -15,12 +16,14 @@ func TestRestoreContractPreservesState(t *testing.T) {
 		ContractStatusTerminated,
 	} {
 		t.Run(string(status), func(t *testing.T) {
+			t.Parallel()
 			for _, withExpiration := range []bool{false, true} {
 				name := "without expiration"
 				if withExpiration {
 					name = "with expiration"
 				}
 				t.Run(name, func(t *testing.T) {
+					t.Parallel()
 					want := draftContractForTest()
 					want.status = status
 					want.updatedAt = want.createdAt.Add(time.Hour)
@@ -42,6 +45,7 @@ func TestRestoreContractPreservesState(t *testing.T) {
 }
 
 func TestRestoreContractRejectsInvalidState(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		change  func(*Contract)
@@ -54,6 +58,7 @@ func TestRestoreContractRejectsInvalidState(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			state := draftContractForTest()
 			tt.change(&state)
 			got, err := RestoreContract(state.id, state.clientID, state.status,
@@ -69,6 +74,7 @@ func TestRestoreContractRejectsInvalidState(t *testing.T) {
 }
 
 func TestRestoreContractCopiesExpiration(t *testing.T) {
+	t.Parallel()
 	state := draftContractForTest()
 	wantExpiration := *state.expiredAt
 	got, err := RestoreContract(state.id, state.clientID, state.status,
@@ -83,6 +89,7 @@ func TestRestoreContractCopiesExpiration(t *testing.T) {
 }
 
 func TestRestoreContractAcceptsDatesFromCreateContract(t *testing.T) {
+	t.Parallel()
 	// Creation currently accepts an expiration before creation time.
 	// Restoring that same state must not introduce a new date restriction.
 	expiredAt := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)

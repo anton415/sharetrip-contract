@@ -10,6 +10,7 @@ import (
 )
 
 func TestCreateContractRejectsEmptyClientBeforeDatabase(t *testing.T) {
+	t.Parallel()
 	response, err := NewService(nil).CreateContract(context.Background(), CreateContractRequest{})
 	if !errors.Is(err, domain.ErrInvalidClientID) {
 		t.Fatalf("error = %v, want ErrInvalidClientID", err)
@@ -20,6 +21,7 @@ func TestCreateContractRejectsEmptyClientBeforeDatabase(t *testing.T) {
 }
 
 func TestSignContractRejectsEmptyIDBeforeDatabase(t *testing.T) {
+	t.Parallel()
 	response, err := NewService(nil).SignContract(context.Background(), SignContractRequest{})
 	if !errors.Is(err, domain.ErrInvalidContractID) {
 		t.Fatalf("error = %v, want ErrInvalidContractID", err)

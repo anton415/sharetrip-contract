@@ -39,8 +39,10 @@ func (s stubContractService) SignContract(ctx context.Context, request service.S
 }
 
 func TestCreateContractHTTPMapping(t *testing.T) {
+	t.Parallel()
 	for _, expiry := range []string{"null", `"2027-01-01T10:00:00Z"`} {
 		t.Run(expiry, func(t *testing.T) {
+			t.Parallel()
 			id, clientID := uuid.New(), uuid.New()
 			createdAt := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)
 			var expires *time.Time
@@ -73,6 +75,7 @@ func TestCreateContractHTTPMapping(t *testing.T) {
 }
 
 func TestSignContractHTTPMapping(t *testing.T) {
+	t.Parallel()
 	requestID, responseID := uuid.New(), uuid.New()
 	calls := 0
 	stub := stubContractService{sign: func(ctx context.Context, request service.SignContractRequest) (service.SignContractResponse, error) {
@@ -93,10 +96,12 @@ func TestSignContractHTTPMapping(t *testing.T) {
 }
 
 func TestHTTPRejectsInvalidRequests(t *testing.T) {
+	t.Parallel()
 	for _, operation := range []struct{ path, field string }{
 		{"/create_contract", "client_id"}, {"/sign_contract", "contract_id"},
 	} {
 		t.Run(operation.path, func(t *testing.T) {
+			t.Parallel()
 			valid := fmt.Sprintf(`{%q:%q}`, operation.field, uuid.New())
 			bodies := []string{"", "{", "null", "[]", "{}",
 				fmt.Sprintf(`{%q:null}`, operation.field),
@@ -110,6 +115,7 @@ func TestHTTPRejectsInvalidRequests(t *testing.T) {
 			}
 			for _, body := range bodies {
 				t.Run(body, func(t *testing.T) {
+					t.Parallel()
 					response := postJSON(t, testApp(stubContractService{}), operation.path, body)
 					assertJSONResponse(t, response, 400, map[string]string{"error": "invalid request body"})
 				})
@@ -126,6 +132,7 @@ func TestHTTPRejectsInvalidRequests(t *testing.T) {
 }
 
 func TestHTTPServiceErrors(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, path string
 		err        error
@@ -141,6 +148,7 @@ func TestHTTPServiceErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			wrapped := fmt.Errorf("operation failed: %w", tt.err)
 			stub := stubContractService{
 				create: func(context.Context, service.CreateContractRequest) (service.CreateContractResponse, error) {
@@ -161,6 +169,7 @@ func TestHTTPServiceErrors(t *testing.T) {
 }
 
 func TestHTTPRejectsUnsupportedResponseStatus(t *testing.T) {
+	t.Parallel()
 	stub := stubContractService{
 		create: func(context.Context, service.CreateContractRequest) (service.CreateContractResponse, error) {
 			return service.CreateContractResponse{Status: "unexpected"}, nil
@@ -171,6 +180,7 @@ func TestHTTPRejectsUnsupportedResponseStatus(t *testing.T) {
 	}
 	for path, field := range map[string]string{"/create_contract": "client_id", "/sign_contract": "contract_id"} {
 		t.Run(path, func(t *testing.T) {
+			t.Parallel()
 			response := postJSON(t, testApp(stub), path, fmt.Sprintf(`{%q:%q}`, field, uuid.New()))
 			assertJSONResponse(t, response, 500, map[string]string{"error": "internal server error"})
 		})
@@ -196,7 +206,7 @@ func postJSON(t *testing.T, app *fiber.App, path, body string) *http.Response {
 
 func assertJSONResponse(t *testing.T, response *http.Response, status int, want any) {
 	t.Helper()
-	defer response.Body.Close()
+	defer closeResponseBody(t, response)
 	if response.StatusCode != status {
 		t.Errorf("HTTP status = %d, want %d", response.StatusCode, status)
 	}
@@ -224,5 +234,12 @@ func assertRequestDeadline(t *testing.T, ctx context.Context) {
 	deadline, ok := ctx.Deadline()
 	if !ok || time.Until(deadline) <= 0 || time.Until(deadline) > 5*time.Second {
 		t.Error("service context must have a deadline within five seconds")
+	}
+}
+
+func closeResponseBody(t *testing.T, response *http.Response) {
+	t.Helper()
+	if err := response.Body.Close(); err != nil {
+		t.Errorf("close response body: %v", err)
 	}
 }

@@ -17,12 +17,14 @@ import (
 )
 
 func TestRepositoryPostgresCreateAndSign(t *testing.T) {
+	t.Parallel()
 	for _, withExpiration := range []bool{false, true} {
 		name := "without expiration"
 		if withExpiration {
 			name = "with expiration"
 		}
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			conn := newPostgresTestConn(t)
 			ctx := t.Context()
 			row := contractRowForTest()
@@ -78,6 +80,7 @@ func TestRepositoryPostgresCreateAndSign(t *testing.T) {
 }
 
 func TestRepositoryPostgresNotFound(t *testing.T) {
+	t.Parallel()
 	conn := newPostgresTestConn(t)
 	repo := NewContractRepository(beginTestTx(t, conn))
 	contract := postgresTestContract(t)
@@ -94,7 +97,9 @@ func TestRepositoryPostgresNotFound(t *testing.T) {
 }
 
 func TestRepositoryPostgresRollback(t *testing.T) {
+	t.Parallel()
 	t.Run("creation", func(t *testing.T) {
+		t.Parallel()
 		conn := newPostgresTestConn(t)
 		contract := postgresTestContract(t)
 		tx := beginTestTx(t, conn)
@@ -111,6 +116,7 @@ func TestRepositoryPostgresRollback(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
+		t.Parallel()
 		conn := newPostgresTestConn(t)
 		contract := postgresTestContract(t)
 		commitTestContract(t, conn, contract)
@@ -139,6 +145,7 @@ func TestRepositoryPostgresRollback(t *testing.T) {
 }
 
 func TestRepositoryPostgresDuplicateID(t *testing.T) {
+	t.Parallel()
 	conn := newPostgresTestConn(t)
 	repo := NewContractRepository(beginTestTx(t, conn))
 	contract := postgresTestContract(t)
@@ -153,6 +160,7 @@ func TestRepositoryPostgresDuplicateID(t *testing.T) {
 }
 
 func TestRepositoryPostgresClosedTransaction(t *testing.T) {
+	t.Parallel()
 	conn := newPostgresTestConn(t)
 	tx := beginTestTx(t, conn)
 	repo := NewContractRepository(tx)
@@ -172,6 +180,7 @@ func TestRepositoryPostgresClosedTransaction(t *testing.T) {
 }
 
 func TestRepositoryPostgresLocksContract(t *testing.T) {
+	t.Parallel()
 	conn := newPostgresTestConn(t)
 	contract := postgresTestContract(t)
 	commitTestContract(t, conn, contract)

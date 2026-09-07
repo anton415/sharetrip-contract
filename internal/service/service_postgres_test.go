@@ -19,12 +19,14 @@ import (
 )
 
 func TestServicePostgresCreateAndSign(t *testing.T) {
+	t.Parallel()
 	for _, withExpiration := range []bool{false, true} {
 		name := "without expiration"
 		if withExpiration {
 			name = "with expiration"
 		}
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			svc, observer := newPostgresTestService(t)
 			request := CreateContractRequest{ClientID: uuid.New()}
 			if withExpiration {
@@ -83,8 +85,10 @@ func TestServicePostgresCreateAndSign(t *testing.T) {
 }
 
 func TestServicePostgresSignErrors(t *testing.T) {
+	t.Parallel()
 	for _, state := range []string{"missing", "suspended", "terminated"} {
 		t.Run(state, func(t *testing.T) {
+			t.Parallel()
 			svc, observer := newPostgresTestService(t)
 			id := uuid.New()
 			wantErr := repository.ErrContractNotFound
@@ -112,6 +116,7 @@ func TestServicePostgresSignErrors(t *testing.T) {
 }
 
 func TestServicePostgresUpdateFailureRollsBack(t *testing.T) {
+	t.Parallel()
 	svc, observer := newPostgresTestService(t)
 	clientID := uuid.New()
 	first := createTestContract(t, svc, clientID)
@@ -133,8 +138,10 @@ func TestServicePostgresUpdateFailureRollsBack(t *testing.T) {
 }
 
 func TestServicePostgresCommitFailure(t *testing.T) {
+	t.Parallel()
 	for _, operation := range []string{"create", "sign"} {
 		t.Run(operation, func(t *testing.T) {
+			t.Parallel()
 			svc, observer := newPostgresTestService(t)
 			var before entity.Contract
 			if operation == "sign" {
@@ -186,6 +193,7 @@ func TestServicePostgresCommitFailure(t *testing.T) {
 }
 
 func TestServicePostgresCancelledContext(t *testing.T) {
+	t.Parallel()
 	svc, _ := newPostgresTestService(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

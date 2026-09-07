@@ -10,6 +10,7 @@ import (
 )
 
 func TestContractSign(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		status  ContractStatus
@@ -26,6 +27,7 @@ func TestContractSign(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			contract := draftContractForTest()
 			contract.status = tt.status
 			want := contract
@@ -46,6 +48,7 @@ func TestContractSign(t *testing.T) {
 }
 
 func TestContractSignTwice(t *testing.T) {
+	t.Parallel()
 	contract := draftContractForTest()
 	signedAt := contract.CreatedAt().Add(time.Hour)
 	if err := contract.Sign(signedAt); err != nil {
@@ -62,7 +65,9 @@ func TestContractSignTwice(t *testing.T) {
 }
 
 func TestContractExpiredAt(t *testing.T) {
+	t.Parallel()
 	t.Run("no expiration", func(t *testing.T) {
+		t.Parallel()
 		contract := Contract{}
 		if got := contract.ExpiredAt(); got != nil {
 			t.Errorf("ExpiredAt() = %v, want nil", got)
@@ -70,6 +75,7 @@ func TestContractExpiredAt(t *testing.T) {
 	})
 
 	t.Run("returns independent copy", func(t *testing.T) {
+		t.Parallel()
 		contract := draftContractForTest()
 		want := *contract.expiredAt
 		got := contract.ExpiredAt()

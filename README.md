@@ -117,8 +117,15 @@ Contract Service проверяет доступность услуги посл
 ## Проверка API, domain, repository и service
 
 ```bash
+make lint
 go test ./...
 ```
+
+`make lint` запускает golangci-lint с дополнительным правилом `paralleltest`,
+как в проверке Job4j. При первом запуске устанавливается golangci-lint v2.4.0
+в `bin/`. Эта проверка выполняется отдельно от `go test` и `go vet`.
+Независимые тесты и подтесты используют `t.Parallel()`; тесты БД изолированы
+отдельными схемами.
 
 Для интеграционных тестов задайте `TEST_DATABASE_URL`, указывающий на учебную
 PostgreSQL. Пользователю БД нужно право создавать схемы:
@@ -127,6 +134,9 @@ PostgreSQL. Пользователю БД нужно право создават
 TEST_DATABASE_URL='postgres://postgres:postgres@localhost:5432/sharetrip_contract_test?sslmode=disable' \
   go test -count=1 -v ./...
 ```
+
+Для проверки гонок и независимости от порядка запуска с той же переменной
+`TEST_DATABASE_URL` можно выполнить `go test -race -shuffle=on ./...`.
 
 Без `TEST_DATABASE_URL` интеграционные тесты пропускаются. Каждый тест создаёт
 собственную схему, выполняет Up-часть `migrations/00001_create_contracts.sql`
