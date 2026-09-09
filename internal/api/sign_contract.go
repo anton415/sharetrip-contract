@@ -1,9 +1,6 @@
 package api
 
 import (
-	"context"
-	"time"
-
 	"github.com/anton415/sharetrip-contract/gen"
 	"github.com/anton415/sharetrip-contract/internal/service"
 	"github.com/gofiber/fiber/v2"
@@ -18,14 +15,8 @@ func (s *Server) SignContract(ctx *fiber.Ctx) error {
 		})
 	}
 
-	callCtx, cancel := context.WithTimeout(
+	response, err := s.contractService.SignContract(
 		ctx.UserContext(),
-		5*time.Second,
-	)
-	defer cancel()
-
-	response, err := s.contracts.SignContract(
-		callCtx,
 		service.SignContractRequest{
 			ContractID: request.ContractId,
 		},

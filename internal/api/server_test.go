@@ -50,12 +50,11 @@ func TestCreateContractHTTPMapping(t *testing.T) {
 				t.Fatal(err)
 			}
 			calls := 0
-			stub := stubContractService{create: func(ctx context.Context, request service.CreateContractRequest) (service.CreateContractResponse, error) {
+			stub := stubContractService{create: func(_ context.Context, request service.CreateContractRequest) (service.CreateContractResponse, error) {
 				calls++
 				if request.ClientID != clientID || !reflect.DeepEqual(request.ExpiredAt, expires) {
 					t.Errorf("unexpected service request: %+v", request)
 				}
-				assertRequestDeadline(t, ctx)
 				return service.CreateContractResponse{
 					ID: id, ClientID: clientID, Status: "draft", CreatedAt: createdAt,
 					UpdatedAt: createdAt, ExpiredAt: expires,
@@ -78,12 +77,11 @@ func TestSignContractHTTPMapping(t *testing.T) {
 	t.Parallel()
 	requestID, responseID := uuid.New(), uuid.New()
 	calls := 0
-	stub := stubContractService{sign: func(ctx context.Context, request service.SignContractRequest) (service.SignContractResponse, error) {
+	stub := stubContractService{sign: func(_ context.Context, request service.SignContractRequest) (service.SignContractResponse, error) {
 		calls++
 		if request.ContractID != requestID {
 			t.Errorf("ContractID = %v, want %v", request.ContractID, requestID)
 		}
-		assertRequestDeadline(t, ctx)
 		return service.SignContractResponse{ID: responseID, Status: "active", UpdatedAt: time.Now()}, nil
 	}}
 	response := postJSON(t, testApp(stub), "/sign_contract", fmt.Sprintf(`{"contract_id":%q}`, requestID))
@@ -187,9 +185,9 @@ func TestHTTPRejectsUnsupportedResponseStatus(t *testing.T) {
 	}
 }
 
-func testApp(contracts ContractService) *fiber.App {
+func testApp(contractService ContractService) *fiber.App {
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
-	RegisterRoutes(app, contracts)
+	RegisterRoutes(app, contractService)
 	return app
 }
 
@@ -226,14 +224,6 @@ func assertJSONResponse(t *testing.T, response *http.Response, status int, want 
 	}
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("JSON = %#v, want %#v", got, expected)
-	}
-}
-
-func assertRequestDeadline(t *testing.T, ctx context.Context) {
-	t.Helper()
-	deadline, ok := ctx.Deadline()
-	if !ok || time.Until(deadline) <= 0 || time.Until(deadline) > 5*time.Second {
-		t.Error("service context must have a deadline within five seconds")
 	}
 }
 

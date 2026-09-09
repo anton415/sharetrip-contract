@@ -39,7 +39,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("ping PostgreSQL: %w", err)
 	}
-	contracts := service.NewService(pool)
+	contractService := service.NewService(pool)
 
 	app := fiber.New()
 	app.Use(swagger.New(swagger.Config{
@@ -48,7 +48,7 @@ func run() error {
 		Path:     "docs",
 		Title:    "ShareTrip API documentation",
 	}))
-	contractapi.RegisterRoutes(app, contracts)
+	contractapi.RegisterRoutes(app, contractService)
 
 	addr := os.Getenv("HTTP_ADDR")
 	if addr == "" {

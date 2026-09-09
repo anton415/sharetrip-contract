@@ -21,15 +21,15 @@ type ContractService interface {
 }
 
 type Server struct {
-	contracts ContractService
+	contractService ContractService
 }
 
 var _ gen.ServerInterface = (*Server)(nil)
 
-func NewServer(contracts ContractService) *Server {
-	return &Server{contracts: contracts}
+func NewServer(contractService ContractService) *Server {
+	return &Server{contractService: contractService}
 }
 
-func RegisterRoutes(router fiber.Router, contracts ContractService) {
-	gen.RegisterHandlers(router, NewServer(contracts))
+func RegisterRoutes(router fiber.Router, contractService ContractService) {
+	gen.RegisterHandlers(router, NewServer(contractService))
 }
