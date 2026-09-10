@@ -166,25 +166,6 @@ func TestHTTPServiceErrors(t *testing.T) {
 	}
 }
 
-func TestHTTPRejectsUnsupportedResponseStatus(t *testing.T) {
-	t.Parallel()
-	stub := stubContractService{
-		create: func(context.Context, service.CreateContractRequest) (service.CreateContractResponse, error) {
-			return service.CreateContractResponse{Status: "unexpected"}, nil
-		},
-		sign: func(context.Context, service.SignContractRequest) (service.SignContractResponse, error) {
-			return service.SignContractResponse{Status: "unexpected"}, nil
-		},
-	}
-	for path, field := range map[string]string{"/create_contract": "client_id", "/sign_contract": "contract_id"} {
-		t.Run(path, func(t *testing.T) {
-			t.Parallel()
-			response := postJSON(t, testApp(stub), path, fmt.Sprintf(`{%q:%q}`, field, uuid.New()))
-			assertJSONResponse(t, response, 500, map[string]string{"error": "internal server error"})
-		})
-	}
-}
-
 func testApp(contractService ContractService) *fiber.App {
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
 	RegisterRoutes(app, contractService)

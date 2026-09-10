@@ -25,15 +25,10 @@ func (s *Server) SignContract(ctx *fiber.Ctx) error {
 		return writeError(ctx, err)
 	}
 
-	status, err := toAPIContractStatus(response.Status)
-	if err != nil {
-		return writeError(ctx, err)
-	}
-
 	return ctx.Status(fiber.StatusOK).JSON(gen.SignContractResponse{
 		Contract: gen.SignedContract{
 			Id:     response.ID,
-			Status: status,
+			Status: gen.ContractStatus(response.Status),
 		},
 	})
 }

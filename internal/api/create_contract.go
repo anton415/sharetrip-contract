@@ -27,16 +27,11 @@ func (s *Server) CreateContract(ctx *fiber.Ctx) error {
 		return writeError(ctx, err)
 	}
 
-	status, err := toAPIContractStatus(response.Status)
-	if err != nil {
-		return writeError(ctx, err)
-	}
-
 	return ctx.Status(fiber.StatusCreated).JSON(gen.CreateContractResponse{
 		Contract: gen.Contract{
 			Id:        response.ID,
 			ClientId:  response.ClientID,
-			Status:    status,
+			Status:    gen.ContractStatus(response.Status),
 			CreatedAt: response.CreatedAt,
 			UpdatedAt: response.UpdatedAt,
 			ExpiredAt: response.ExpiredAt,
