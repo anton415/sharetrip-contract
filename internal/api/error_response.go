@@ -23,6 +23,10 @@ func writeError(ctx *fiber.Ctx, err error) error {
 		status = fiber.StatusBadRequest
 		message = "invalid contract id"
 
+	case errors.Is(err, domain.ErrInvalidContractServices):
+		status = fiber.StatusBadRequest
+		message = "invalid contract services"
+
 	case errors.Is(err, repository.ErrContractNotFound):
 		status = fiber.StatusNotFound
 		message = "contract not found"

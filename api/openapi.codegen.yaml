@@ -2,4 +2,7 @@ package: gen
 generate:
   fiber-server: true
   models: true
+output-options:
+  # Healthcheck is registered manually in internal/api/route.go.
+  exclude-operation-ids: [health]
 output: gen/openapi.gen.go

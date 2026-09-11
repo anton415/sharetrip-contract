@@ -40,11 +40,14 @@ func TestRepositoryPostgresCreateAndSign(t *testing.T) {
 			if err := repo.Create(ctx, contract); err != nil {
 				t.Fatalf("Create(): %v", err)
 			}
-			loaded, err := repo.GetByIDForUpdate(ctx, contract.ID())
+			loaded, err := repo.GetByID(ctx, contract.ID())
 			if err != nil {
-				t.Fatalf("GetByIDForUpdate(): %v", err)
+				t.Fatalf("GetByID(): %v", err)
 			}
 			assertStoredContract(t, toEntityContract(loaded), row)
+			if _, err := repo.GetActiveByClientID(ctx, contract.ClientID()); !errors.Is(err, ErrContractNotFound) {
+				t.Fatalf("active lookup for draft error = %v, want %v", err, ErrContractNotFound)
+			}
 			if err := tx.Commit(ctx); err != nil {
 				t.Fatalf("commit creation: %v", err)
 			}
@@ -75,6 +78,18 @@ func TestRepositoryPostgresCreateAndSign(t *testing.T) {
 			row.Status = "active"
 			row.UpdatedAt = signedAt
 			assertStoredContract(t, toEntityContract(loaded), row)
+			loaded, err = repo.GetActiveByClientID(ctx, contract.ClientID())
+			if err != nil {
+				t.Fatalf("GetActiveByClientID(): %v", err)
+			}
+			assertStoredContract(t, toEntityContract(loaded), row)
+			otherClientID, err := domain.NewClientID(uuid.New())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := repo.GetActiveByClientID(ctx, otherClientID); !errors.Is(err, ErrContractNotFound) {
+				t.Fatalf("active lookup for another client error = %v, want %v", err, ErrContractNotFound)
+			}
 		})
 	}
 }
@@ -84,6 +99,12 @@ func TestRepositoryPostgresNotFound(t *testing.T) {
 	conn := newPostgresTestConn(t)
 	repo := NewContractRepository(beginTestTx(t, conn))
 	contract := postgresTestContract(t)
+	if _, err := repo.GetByID(t.Context(), contract.ID()); !errors.Is(err, ErrContractNotFound) {
+		t.Errorf("GetByID() error = %v, want %v", err, ErrContractNotFound)
+	}
+	if _, err := repo.GetActiveByClientID(t.Context(), contract.ClientID()); !errors.Is(err, ErrContractNotFound) {
+		t.Errorf("GetActiveByClientID() error = %v, want %v", err, ErrContractNotFound)
+	}
 	got, err := repo.GetByIDForUpdate(t.Context(), contract.ID())
 	if !errors.Is(err, ErrContractNotFound) {
 		t.Fatalf("GetByIDForUpdate() error = %v, want %v", err, ErrContractNotFound)
@@ -200,6 +221,9 @@ func TestRepositoryPostgresLocksContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	otherTx := beginTestTx(t, other)
+	if _, err := NewContractRepository(otherTx).GetByID(t.Context(), contract.ID()); err != nil {
+		t.Fatalf("read locked contract: %v", err)
+	}
 	_, err = NewContractRepository(otherTx).GetByIDForUpdate(t.Context(), contract.ID())
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) || pgErr.Code != "55P03" {

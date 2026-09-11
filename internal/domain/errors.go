@@ -7,4 +7,5 @@ var (
 	ErrInvalidContractID         = errors.New("invalid contract id")
 	ErrInvalidContractTransition = errors.New("invalid contract state transition")
 	ErrInvalidContractStatus     = errors.New("invalid contract status")
+	ErrInvalidContractServices   = errors.New("invalid contract services")
 )

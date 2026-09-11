@@ -4,16 +4,68 @@
 package gen
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for CheckServiceResponseReason.
+const (
+	ContractExpired   CheckServiceResponseReason = "contract_expired"
+	ContractNotActive CheckServiceResponseReason = "contract_not_active"
+	ContractNotFound  CheckServiceResponseReason = "contract_not_found"
+	ServiceAllowed    CheckServiceResponseReason = "service_allowed"
+	ServiceNotAllowed CheckServiceResponseReason = "service_not_allowed"
+)
+
+// Valid indicates whether the value is a known member of the CheckServiceResponseReason enum.
+func (e CheckServiceResponseReason) Valid() bool {
+	switch e {
+	case ContractExpired:
+		return true
+	case ContractNotActive:
+		return true
+	case ContractNotFound:
+		return true
+	case ServiceAllowed:
+		return true
+	case ServiceNotAllowed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContractServiceInputServiceCode.
+const (
+	Notifications    ContractServiceInputServiceCode = "notifications"
+	TripCreation     ContractServiceInputServiceCode = "trip_creation"
+	TripParticipants ContractServiceInputServiceCode = "trip_participants"
+)
+
+// Valid indicates whether the value is a known member of the ContractServiceInputServiceCode enum.
+func (e ContractServiceInputServiceCode) Valid() bool {
+	switch e {
+	case Notifications:
+		return true
+	case TripCreation:
+		return true
+	case TripParticipants:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ContractStatus.
 const (
-	Active ContractStatus = "active"
-	Draft  ContractStatus = "draft"
+	Active     ContractStatus = "active"
+	Draft      ContractStatus = "draft"
+	Suspended  ContractStatus = "suspended"
+	Terminated ContractStatus = "terminated"
 )
 
 // Valid indicates whether the value is a known member of the ContractStatus enum.
@@ -23,10 +75,29 @@ func (e ContractStatus) Valid() bool {
 		return true
 	case Draft:
 		return true
+	case Suspended:
+		return true
+	case Terminated:
+		return true
 	default:
 		return false
 	}
 }
+
+// CheckServiceRequest defines model for CheckServiceRequest.
+type CheckServiceRequest struct {
+	ClientId    openapi_types.UUID `json:"client_id"`
+	ServiceCode string             `json:"service_code"`
+}
+
+// CheckServiceResponse defines model for CheckServiceResponse.
+type CheckServiceResponse struct {
+	Allowed bool                       `json:"allowed"`
+	Reason  CheckServiceResponseReason `json:"reason"`
+}
+
+// CheckServiceResponseReason defines model for CheckServiceResponse.Reason.
+type CheckServiceResponseReason string
 
 // Contract defines model for Contract.
 type Contract struct {
@@ -37,6 +108,15 @@ type Contract struct {
 	Status    ContractStatus     `json:"status"`
 	UpdatedAt time.Time          `json:"updated_at"`
 }
+
+// ContractServiceInput defines model for ContractServiceInput.
+type ContractServiceInput struct {
+	Enabled     *bool                           `json:"enabled"`
+	ServiceCode ContractServiceInputServiceCode `json:"service_code"`
+}
+
+// ContractServiceInputServiceCode defines model for ContractServiceInput.ServiceCode.
+type ContractServiceInputServiceCode string
 
 // ContractStatus defines model for ContractStatus.
 type ContractStatus string
@@ -57,6 +137,11 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+// GetContractResponse defines model for GetContractResponse.
+type GetContractResponse struct {
+	Contract Contract `json:"contract"`
+}
+
 // SignContractRequest defines model for SignContractRequest.
 type SignContractRequest struct {
 	ContractId openapi_types.UUID `json:"contract_id"`
@@ -73,17 +158,32 @@ type SignedContract struct {
 	Status ContractStatus     `json:"status"`
 }
 
+// UpsertContractServicesRequest defines model for UpsertContractServicesRequest.
+type UpsertContractServicesRequest struct {
+	// Services Each service_code must be unique within the request.
+	Services []ContractServiceInput `json:"services"`
+}
+
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
 
 // Conflict defines model for Conflict.
 type Conflict = ErrorResponse
 
+// ContractFound defines model for ContractFound.
+type ContractFound = GetContractResponse
+
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = ErrorResponse
 
 // NotFound defines model for NotFound.
 type NotFound = ErrorResponse
+
+// CheckServiceJSONRequestBody defines body for CheckService for application/json ContentType.
+type CheckServiceJSONRequestBody = CheckServiceRequest
+
+// UpsertContractServicesJSONRequestBody defines body for UpsertContractServices for application/json ContentType.
+type UpsertContractServicesJSONRequestBody = UpsertContractServicesRequest
 
 // CreateContractJSONRequestBody defines body for CreateContract for application/json ContentType.
 type CreateContractJSONRequestBody = CreateContractRequest
@@ -93,6 +193,18 @@ type SignContractJSONRequestBody = SignContractRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// GetActiveContract Get the company's contract with active status
+	// (GET /clients/{client_id}/contracts/active)
+	GetActiveContract(c *fiber.Ctx, clientId string) error
+	// CheckService Check whether a company can use a service
+	// (POST /contracts/check-service)
+	CheckService(c *fiber.Ctx) error
+	// GetContract Get a contract by ID
+	// (GET /contracts/{contract_id})
+	GetContract(c *fiber.Ctx, contractId string) error
+	// UpsertContractServices Add or update contract services
+	// (PATCH /contracts/{contract_id}/services)
+	UpsertContractServices(c *fiber.Ctx, contractId string) error
 	// CreateContract Create a draft contract
 	// (POST /create_contract)
 	CreateContract(c *fiber.Ctx) error
@@ -109,6 +221,111 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc fiber.Handler
 type HandlerMiddlewareFunc func(c *fiber.Ctx, next fiber.Handler) error
+
+// GetActiveContract operation middleware
+func (siw *ServerInterfaceWrapper) GetActiveContract(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "client_id" -------------
+	var clientId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "client_id", c.Params("client_id"), &clientId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter client_id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetActiveContract(c, clientId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// CheckService operation middleware
+func (siw *ServerInterfaceWrapper) CheckService(c *fiber.Ctx) error {
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.CheckService(c)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// GetContract operation middleware
+func (siw *ServerInterfaceWrapper) GetContract(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "contract_id" -------------
+	var contractId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contract_id", c.Params("contract_id"), &contractId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter contract_id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.GetContract(c, contractId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
+
+// UpsertContractServices operation middleware
+func (siw *ServerInterfaceWrapper) UpsertContractServices(c *fiber.Ctx) error {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "contract_id" -------------
+	var contractId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contract_id", c.Params("contract_id"), &contractId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Errorf("Invalid format for parameter contract_id: %w", err).Error())
+	}
+
+	handler := func(c *fiber.Ctx) error {
+		return siw.Handler.UpsertContractServices(c, contractId)
+	}
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		m := siw.HandlerMiddlewares[i]
+		next := handler
+		handler = func(c *fiber.Ctx) error {
+			return m(c, next)
+		}
+	}
+
+	return handler(c)
+}
 
 // CreateContract operation middleware
 func (siw *ServerInterfaceWrapper) CreateContract(c *fiber.Ctx) error {
@@ -168,6 +385,14 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 	for _, m := range options.Middlewares {
 		router.Use(fiber.Handler(m))
 	}
+
+	router.Post(options.BaseURL+"/contracts/check-service", wrapper.CheckService)
+
+	router.Patch(options.BaseURL+"/contracts/:contract_id/services", wrapper.UpsertContractServices)
+
+	router.Get(options.BaseURL+"/contracts/:contract_id", wrapper.GetContract)
+
+	router.Get(options.BaseURL+"/clients/:client_id/contracts/active", wrapper.GetActiveContract)
 
 	router.Post(options.BaseURL+"/create_contract", wrapper.CreateContract)
 

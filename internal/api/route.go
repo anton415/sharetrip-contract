@@ -9,6 +9,20 @@ import (
 )
 
 type ContractService interface {
+	CheckService(context.Context, service.CheckServiceRequest) (service.CheckServiceResponse, error)
+
+	UpsertContractServices(context.Context, service.UpsertContractServicesRequest) error
+
+	GetContract(
+		context.Context,
+		service.GetContractRequest,
+	) (service.GetContractResponse, error)
+
+	GetActiveContract(
+		context.Context,
+		service.GetActiveContractRequest,
+	) (service.GetContractResponse, error)
+
 	CreateContract(
 		context.Context,
 		service.CreateContractRequest,
@@ -31,5 +45,9 @@ func NewServer(contractService ContractService) *Server {
 }
 
 func RegisterRoutes(router fiber.Router, contractService ContractService) {
+	router.Get("/health", func(ctx *fiber.Ctx) error {
+		return ctx.SendStatus(fiber.StatusOK)
+	})
+
 	gen.RegisterHandlers(router, NewServer(contractService))
 }

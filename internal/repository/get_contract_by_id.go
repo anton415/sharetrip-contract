@@ -10,6 +10,34 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func (r *ContractRepository) GetByID(
+	ctx context.Context,
+	id domain.ContractID,
+) (domain.Contract, error) {
+	const query = `
+		SELECT id, client_id, status,
+		       created_at, updated_at, expired_at
+		FROM contracts
+		WHERE id = $1
+	`
+
+	return scanContract(r.tx.QueryRow(ctx, query, id.Value()))
+}
+
+func (r *ContractRepository) GetActiveByClientID(
+	ctx context.Context,
+	id domain.ClientID,
+) (domain.Contract, error) {
+	const query = `
+		SELECT id, client_id, status,
+		       created_at, updated_at, expired_at
+		FROM contracts
+		WHERE client_id = $1 AND status = 'active'
+	`
+
+	return scanContract(r.tx.QueryRow(ctx, query, id.Value()))
+}
+
 func (r *ContractRepository) GetByIDForUpdate(
 	ctx context.Context,
 	id domain.ContractID,
@@ -22,8 +50,12 @@ func (r *ContractRepository) GetByIDForUpdate(
 		FOR UPDATE
 	`
 
+	return scanContract(r.tx.QueryRow(ctx, query, id.Value()))
+}
+
+func scanContract(result pgx.Row) (domain.Contract, error) {
 	var row entity.Contract
-	err := r.tx.QueryRow(ctx, query, id.Value()).Scan(
+	err := result.Scan(
 		&row.ID,
 		&row.ClientID,
 		&row.Status,
