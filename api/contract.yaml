@@ -226,7 +226,7 @@ components:
       properties:
         service_code:
           type: string
-          enum: [trip_creation, trip_participants, notifications]
+          enum: [trip_creation, trip_participants, notifications, trip_start]
         enabled:
           type: boolean
           x-go-type: '*bool'

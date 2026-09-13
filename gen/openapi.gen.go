@@ -44,6 +44,7 @@ const (
 	Notifications    ContractServiceInputServiceCode = "notifications"
 	TripCreation     ContractServiceInputServiceCode = "trip_creation"
 	TripParticipants ContractServiceInputServiceCode = "trip_participants"
+	TripStart        ContractServiceInputServiceCode = "trip_start"
 )
 
 // Valid indicates whether the value is a known member of the ContractServiceInputServiceCode enum.
@@ -54,6 +55,8 @@ func (e ContractServiceInputServiceCode) Valid() bool {
 	case TripCreation:
 		return true
 	case TripParticipants:
+		return true
+	case TripStart:
 		return true
 	default:
 		return false

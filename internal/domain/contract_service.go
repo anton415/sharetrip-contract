@@ -12,7 +12,7 @@ func ValidateContractServices(services []ContractService) error {
 	seen := make(map[string]bool, len(services))
 	for _, item := range services {
 		switch item.ServiceCode {
-		case "trip_creation", "trip_participants", "notifications":
+		case "trip_creation", "trip_participants", "notifications", "trip_start":
 		default:
 			return ErrInvalidContractServices
 		}
