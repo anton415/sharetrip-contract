@@ -1,0 +1,21 @@
+post:
+  operationId: create_contract
+  summary: Create a draft contract
+  description: Creates a draft contract and saves it in PostgreSQL.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../contract.yaml#/components/schemas/CreateContractRequest'
+  responses:
+    '201':
+      description: Draft contract created and saved
+      content:
+        application/json:
+          schema:
+            $ref: '../contract.yaml#/components/schemas/CreateContractResponse'
+    '400':
+      $ref: '../contract.yaml#/components/responses/BadRequest'
+    '500':
+      $ref: '../contract.yaml#/components/responses/InternalServerError'

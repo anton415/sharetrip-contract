@@ -35,6 +35,10 @@ func writeError(ctx *fiber.Ctx, err error) error {
 		status = fiber.StatusConflict
 		message = "contract cannot be signed in its current state"
 
+	case errors.Is(err, domain.ErrContractNotDraft):
+		status = fiber.StatusConflict
+		message = "contract services can be configured only for a draft contract"
+
 	default:
 		slog.Error("contract request failed", "error", err)
 	}

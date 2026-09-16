@@ -7,12 +7,13 @@ import (
 
 	"github.com/anton415/sharetrip-contract/internal/domain"
 	"github.com/anton415/sharetrip-contract/internal/repository/entity"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
 func (r *ContractRepository) GetForServiceCheck(
 	ctx context.Context,
-	clientID domain.ClientID,
+	clientID uuid.UUID,
 	serviceCode string,
 ) (domain.Contract, bool, error) {
 	const query = `
@@ -28,7 +29,7 @@ func (r *ContractRepository) GetForServiceCheck(
 
 	var row entity.Contract
 	var enabled bool
-	err := r.tx.QueryRow(ctx, query, clientID.Value(), serviceCode).Scan(
+	err := r.tx.QueryRow(ctx, query, clientID, serviceCode).Scan(
 		&row.ID,
 		&row.ClientID,
 		&row.Status,

@@ -1,0 +1,11 @@
+get:
+  operationId: health
+  summary: Check HTTP server availability
+  responses:
+    '200':
+      description: HTTP server is running
+      content:
+        text/plain:
+          schema:
+            type: string
+          example: OK

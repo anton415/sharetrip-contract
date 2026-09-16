@@ -1,0 +1,21 @@
+post:
+  operationId: check_service
+  summary: Check whether a company can use a service
+  description: Requires an active, unexpired contract with the requested service enabled. Business denials return HTTP 200.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../contract.yaml#/components/schemas/CheckServiceRequest'
+  responses:
+    '200':
+      description: Service availability decision
+      content:
+        application/json:
+          schema:
+            $ref: '../contract.yaml#/components/schemas/CheckServiceResponse'
+    '400':
+      $ref: '../contract.yaml#/components/responses/BadRequest'
+    '500':
+      $ref: '../contract.yaml#/components/responses/InternalServerError'

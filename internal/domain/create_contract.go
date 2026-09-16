@@ -7,13 +7,13 @@ import (
 )
 
 type CreateContractRequest struct {
-	ClientID  ClientID
+	ClientID  uuid.UUID
 	ExpiredAt *time.Time
 }
 
 type CreateContractResponse struct {
 	ID        ContractID
-	ClientID  ClientID
+	ClientID  uuid.UUID
 	Status    ContractStatus
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -23,7 +23,7 @@ type CreateContractResponse struct {
 func CreateContract(
 	request CreateContractRequest,
 ) (CreateContractResponse, error) {
-	if request.ClientID.Value() == uuid.Nil {
+	if request.ClientID == uuid.Nil {
 		return CreateContractResponse{}, ErrInvalidClientID
 	}
 

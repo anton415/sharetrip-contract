@@ -1,0 +1,20 @@
+get:
+  operationId: get_contract
+  summary: Get a contract by ID
+  parameters:
+    - name: contract_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-go-type: string
+  responses:
+    '200':
+      $ref: '../contract.yaml#/components/responses/ContractFound'
+    '400':
+      $ref: '../contract.yaml#/components/responses/BadRequest'
+    '404':
+      $ref: '../contract.yaml#/components/responses/NotFound'
+    '500':
+      $ref: '../contract.yaml#/components/responses/InternalServerError'

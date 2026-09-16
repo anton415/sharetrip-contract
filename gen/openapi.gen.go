@@ -102,6 +102,12 @@ type CheckServiceResponse struct {
 // CheckServiceResponseReason defines model for CheckServiceResponse.Reason.
 type CheckServiceResponseReason string
 
+// ConfigureContractServicesRequest defines model for ConfigureContractServicesRequest.
+type ConfigureContractServicesRequest struct {
+	// Services Each service_code must be unique within the request.
+	Services []ContractServiceInput `json:"services"`
+}
+
 // Contract defines model for Contract.
 type Contract struct {
 	ClientId  openapi_types.UUID `json:"client_id"`
@@ -161,12 +167,6 @@ type SignedContract struct {
 	Status ContractStatus     `json:"status"`
 }
 
-// UpsertContractServicesRequest defines model for UpsertContractServicesRequest.
-type UpsertContractServicesRequest struct {
-	// Services Each service_code must be unique within the request.
-	Services []ContractServiceInput `json:"services"`
-}
-
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
 
@@ -175,6 +175,9 @@ type Conflict = ErrorResponse
 
 // ContractFound defines model for ContractFound.
 type ContractFound = GetContractResponse
+
+// ContractNotDraft defines model for ContractNotDraft.
+type ContractNotDraft = ErrorResponse
 
 // InternalServerError defines model for InternalServerError.
 type InternalServerError = ErrorResponse
@@ -185,8 +188,8 @@ type NotFound = ErrorResponse
 // CheckServiceJSONRequestBody defines body for CheckService for application/json ContentType.
 type CheckServiceJSONRequestBody = CheckServiceRequest
 
-// UpsertContractServicesJSONRequestBody defines body for UpsertContractServices for application/json ContentType.
-type UpsertContractServicesJSONRequestBody = UpsertContractServicesRequest
+// ConfigureContractServicesJSONRequestBody defines body for ConfigureContractServices for application/json ContentType.
+type ConfigureContractServicesJSONRequestBody = ConfigureContractServicesRequest
 
 // CreateContractJSONRequestBody defines body for CreateContract for application/json ContentType.
 type CreateContractJSONRequestBody = CreateContractRequest
@@ -205,9 +208,9 @@ type ServerInterface interface {
 	// GetContract Get a contract by ID
 	// (GET /contracts/{contract_id})
 	GetContract(c *fiber.Ctx, contractId string) error
-	// UpsertContractServices Add or update contract services
-	// (PATCH /contracts/{contract_id}/services)
-	UpsertContractServices(c *fiber.Ctx, contractId string) error
+	// ConfigureContractServices Configure services for a draft contract
+	// (POST /contracts/{contract_id}/configure-services)
+	ConfigureContractServices(c *fiber.Ctx, contractId string) error
 	// CreateContract Create a draft contract
 	// (POST /create_contract)
 	CreateContract(c *fiber.Ctx) error
@@ -301,8 +304,8 @@ func (siw *ServerInterfaceWrapper) GetContract(c *fiber.Ctx) error {
 	return handler(c)
 }
 
-// UpsertContractServices operation middleware
-func (siw *ServerInterfaceWrapper) UpsertContractServices(c *fiber.Ctx) error {
+// ConfigureContractServices operation middleware
+func (siw *ServerInterfaceWrapper) ConfigureContractServices(c *fiber.Ctx) error {
 
 	var err error
 	_ = err
@@ -316,7 +319,7 @@ func (siw *ServerInterfaceWrapper) UpsertContractServices(c *fiber.Ctx) error {
 	}
 
 	handler := func(c *fiber.Ctx) error {
-		return siw.Handler.UpsertContractServices(c, contractId)
+		return siw.Handler.ConfigureContractServices(c, contractId)
 	}
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -389,13 +392,13 @@ func RegisterHandlersWithOptions(router fiber.Router, si ServerInterface, option
 		router.Use(fiber.Handler(m))
 	}
 
-	router.Post(options.BaseURL+"/contracts/check-service", wrapper.CheckService)
-
-	router.Patch(options.BaseURL+"/contracts/:contract_id/services", wrapper.UpsertContractServices)
+	router.Get(options.BaseURL+"/clients/:client_id/contracts/active", wrapper.GetActiveContract)
 
 	router.Get(options.BaseURL+"/contracts/:contract_id", wrapper.GetContract)
 
-	router.Get(options.BaseURL+"/clients/:client_id/contracts/active", wrapper.GetActiveContract)
+	router.Post(options.BaseURL+"/contracts/:contract_id/configure-services", wrapper.ConfigureContractServices)
+
+	router.Post(options.BaseURL+"/contracts/check-service", wrapper.CheckService)
 
 	router.Post(options.BaseURL+"/create_contract", wrapper.CreateContract)
 

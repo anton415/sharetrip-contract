@@ -32,7 +32,7 @@ func TestContractMappingRoundTrip(t *testing.T) {
 					if err != nil {
 						t.Fatalf("toDomainContract(): %v", err)
 					}
-					if contract.ID().Value() != want.ID || contract.ClientID().Value() != want.ClientID ||
+					if contract.ID().Value() != want.ID || contract.ClientID() != want.ClientID ||
 						string(contract.Status()) != want.Status {
 						t.Error("mapping to domain changed identifiers or status")
 					}

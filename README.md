@@ -48,10 +48,10 @@ curl -i http://localhost:8080/sign_contract \
   -d '{"contract_id":"UUID_ИЗ_ОТВЕТА"}'
 ```
 
-Включите услугу для того же договора (ожидается `204` без тела ответа):
+Настройте услуги черновика договора (ожидается `204` без тела ответа):
 
 ```bash
-curl -i -X PATCH http://localhost:8080/contracts/UUID_ИЗ_ОТВЕТА/services \
+curl -i -X POST http://localhost:8080/contracts/UUID_ИЗ_ОТВЕТА/configure-services \
   -H 'Content-Type: application/json' \
   -d '{"services":[{"service_code":"trip_creation","enabled":true}]}'
 ```

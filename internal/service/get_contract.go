@@ -38,12 +38,11 @@ func (s *Service) GetContract(ctx context.Context, request GetContractRequest) (
 }
 
 func (s *Service) GetActiveContract(ctx context.Context, request GetActiveContractRequest) (GetContractResponse, error) {
-	id, err := domain.NewClientID(request.ClientID)
-	if err != nil {
-		return GetContractResponse{}, err
+	if request.ClientID == uuid.Nil {
+		return GetContractResponse{}, domain.ErrInvalidClientID
 	}
 	return s.getContract(ctx, func(repo *repository.ContractRepository) (domain.Contract, error) {
-		return repo.GetActiveByClientID(ctx, id)
+		return repo.GetActiveByClientID(ctx, request.ClientID)
 	})
 }
 
@@ -63,7 +62,7 @@ func (s *Service) getContract(
 	}
 	return GetContractResponse{
 		ID:        contract.ID().Value(),
-		ClientID:  contract.ClientID().Value(),
+		ClientID:  contract.ClientID(),
 		Status:    string(contract.Status()),
 		CreatedAt: contract.CreatedAt(),
 		UpdatedAt: contract.UpdatedAt(),

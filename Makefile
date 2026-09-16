@@ -2,6 +2,7 @@ OAPI_CODEGEN_VERSION := v2.8.0
 GOEXE := $(shell go env GOEXE)
 OAPI_CODEGEN_BIN := bin/oapi-codegen$(GOEXE)
 OAPI_CODEGEN := ./$(OAPI_CODEGEN_BIN)
+OPENAPI_BUNDLE := api/contract.bundle.yaml
 GOLANGCI_LINT_VERSION := v2.4.0
 GOLANGCI_LINT_BIN := bin/golangci-lint$(GOEXE)
 GOOSE ?= goose
@@ -18,7 +19,8 @@ $(OAPI_CODEGEN_BIN):
 generate: generate-api
 
 generate-api: $(OAPI_CODEGEN_BIN)
-	$(OAPI_CODEGEN) --config api/openapi.codegen.yaml api/contract.yaml
+	go run ./cmd/openapi-bundle > $(OPENAPI_BUNDLE)
+	$(OAPI_CODEGEN) --config api/openapi.codegen.yaml $(OPENAPI_BUNDLE)
 
 run: generate
 	go run ./cmd

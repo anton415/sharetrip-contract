@@ -7,6 +7,7 @@ import (
 
 	"github.com/anton415/sharetrip-contract/internal/domain"
 	"github.com/anton415/sharetrip-contract/internal/repository/entity"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -26,7 +27,7 @@ func (r *ContractRepository) GetByID(
 
 func (r *ContractRepository) GetActiveByClientID(
 	ctx context.Context,
-	id domain.ClientID,
+	id uuid.UUID,
 ) (domain.Contract, error) {
 	const query = `
 		SELECT id, client_id, status,
@@ -35,7 +36,7 @@ func (r *ContractRepository) GetActiveByClientID(
 		WHERE client_id = $1 AND status = 'active'
 	`
 
-	return scanContract(r.tx.QueryRow(ctx, query, id.Value()))
+	return scanContract(r.tx.QueryRow(ctx, query, id))
 }
 
 func (r *ContractRepository) GetByIDForUpdate(

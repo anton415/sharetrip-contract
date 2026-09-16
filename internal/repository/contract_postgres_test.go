@@ -63,8 +63,8 @@ func TestRepositoryPostgresCreateAndSign(t *testing.T) {
 			if err := loaded.Sign(signedAt); err != nil {
 				t.Fatalf("Sign(): %v", err)
 			}
-			if err := repo.Update(ctx, loaded); err != nil {
-				t.Fatalf("Update(): %v", err)
+			if err := repo.SignContract(ctx, loaded.ID(), loaded.UpdatedAt()); err != nil {
+				t.Fatalf("SignContract(): %v", err)
 			}
 			if err := tx.Commit(ctx); err != nil {
 				t.Fatalf("commit signing: %v", err)
@@ -83,10 +83,7 @@ func TestRepositoryPostgresCreateAndSign(t *testing.T) {
 				t.Fatalf("GetActiveByClientID(): %v", err)
 			}
 			assertStoredContract(t, toEntityContract(loaded), row)
-			otherClientID, err := domain.NewClientID(uuid.New())
-			if err != nil {
-				t.Fatal(err)
-			}
+			otherClientID := uuid.New()
 			if _, err := repo.GetActiveByClientID(ctx, otherClientID); !errors.Is(err, ErrContractNotFound) {
 				t.Fatalf("active lookup for another client error = %v, want %v", err, ErrContractNotFound)
 			}
@@ -112,8 +109,8 @@ func TestRepositoryPostgresNotFound(t *testing.T) {
 	if !reflect.DeepEqual(got, domain.Contract{}) {
 		t.Error("missing contract must return an empty result")
 	}
-	if err := repo.Update(t.Context(), contract); !errors.Is(err, ErrContractNotFound) {
-		t.Errorf("Update() error = %v, want %v", err, ErrContractNotFound)
+	if err := repo.SignContract(t.Context(), contract.ID(), contract.UpdatedAt()); !errors.Is(err, ErrContractNotFound) {
+		t.Errorf("SignContract() error = %v, want %v", err, ErrContractNotFound)
 	}
 }
 
@@ -150,7 +147,7 @@ func TestRepositoryPostgresRollback(t *testing.T) {
 		if err := loaded.Sign(loaded.UpdatedAt().Add(time.Hour)); err != nil {
 			t.Fatal(err)
 		}
-		if err := repo.Update(t.Context(), loaded); err != nil {
+		if err := repo.SignContract(t.Context(), loaded.ID(), loaded.UpdatedAt()); err != nil {
 			t.Fatal(err)
 		}
 		if err := tx.Rollback(t.Context()); err != nil {
@@ -195,8 +192,8 @@ func TestRepositoryPostgresClosedTransaction(t *testing.T) {
 	if _, err := repo.GetByIDForUpdate(t.Context(), contract.ID()); !errors.Is(err, pgx.ErrTxClosed) {
 		t.Errorf("GetByIDForUpdate() error = %v, want wrapped ErrTxClosed", err)
 	}
-	if err := repo.Update(t.Context(), contract); !errors.Is(err, pgx.ErrTxClosed) {
-		t.Errorf("Update() error = %v, want wrapped ErrTxClosed", err)
+	if err := repo.SignContract(t.Context(), contract.ID(), contract.UpdatedAt()); !errors.Is(err, pgx.ErrTxClosed) {
+		t.Errorf("SignContract() error = %v, want wrapped ErrTxClosed", err)
 	}
 }
 
@@ -235,7 +232,7 @@ func TestRepositoryPostgresLocksContract(t *testing.T) {
 	if err := loaded.Sign(loaded.UpdatedAt().Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.Update(t.Context(), loaded); err != nil {
+	if err := repo.SignContract(t.Context(), loaded.ID(), loaded.UpdatedAt()); err != nil {
 		t.Fatal(err)
 	}
 	if err := tx.Commit(t.Context()); err != nil {

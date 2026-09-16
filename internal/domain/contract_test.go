@@ -94,7 +94,7 @@ func draftContractForTest() Contract {
 	expiredAt := createdAt.Add(24 * time.Hour)
 	return Contract{
 		id:        ContractID{value: uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")},
-		clientID:  ClientID{value: uuid.MustParse("550e8400-e29b-41d4-a716-446655440001")},
+		clientID:  uuid.MustParse("550e8400-e29b-41d4-a716-446655440001"),
 		status:    ContractStatusDraft,
 		createdAt: createdAt,
 		updatedAt: createdAt,

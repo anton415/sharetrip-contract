@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestRestoreContractPreservesState(t *testing.T) {
@@ -52,7 +54,7 @@ func TestRestoreContractRejectsInvalidState(t *testing.T) {
 		wantErr error
 	}{
 		{"empty contract id", func(c *Contract) { c.id = ContractID{} }, ErrInvalidContractID},
-		{"empty client id", func(c *Contract) { c.clientID = ClientID{} }, ErrInvalidClientID},
+		{"empty client id", func(c *Contract) { c.clientID = uuid.Nil }, ErrInvalidClientID},
 		{"empty status", func(c *Contract) { c.status = "" }, ErrInvalidContractStatus},
 		{"unknown status", func(c *Contract) { c.status = "unknown" }, ErrInvalidContractStatus},
 	}

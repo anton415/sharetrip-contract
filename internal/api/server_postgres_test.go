@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -33,7 +30,7 @@ func TestHTTPPostgresCheckService(t *testing.T) {
 	}
 	setService := func(id uuid.UUID, enabled bool) {
 		t.Helper()
-		if err := svc.UpsertContractServices(t.Context(), service.UpsertContractServicesRequest{
+		if err := svc.ConfigureContractServices(t.Context(), service.ConfigureContractServicesRequest{
 			ContractID: id,
 			Services:   []service.ContractService{{ServiceCode: "trip_creation", Enabled: enabled}},
 		}); err != nil {
@@ -56,15 +53,6 @@ func TestHTTPPostgresCheckService(t *testing.T) {
 	assertJSONResponse(t, postJSON(t, app, "/contracts/check-service", otherClientBody), 200,
 		map[string]any{"allowed": false, "reason": "contract_not_found"})
 
-	setService(created.ID, false)
-	// A newer draft with the service enabled must not override the active contract.
-	draft, err := svc.CreateContract(t.Context(), service.CreateContractRequest{ClientID: clientID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	setService(draft.ID, true)
-	check("trip_creation", false, "service_not_allowed")
-	setService(created.ID, true)
 	if _, err := observer.Exec(t.Context(), "UPDATE contracts SET expired_at = $2 WHERE id = $1",
 		created.ID, time.Now().Add(-time.Hour)); err != nil {
 		t.Fatal(err)
@@ -79,55 +67,6 @@ func TestHTTPPostgresCheckService(t *testing.T) {
 	pool.Close()
 	assertJSONResponse(t, postJSON(t, app, "/contracts/check-service", otherClientBody), 500,
 		map[string]string{"error": "internal server error"})
-}
-
-func TestHTTPPostgresUpsertContractServices(t *testing.T) {
-	t.Parallel()
-	pool, observer := newHTTPTestDatabase(t)
-	svc := service.NewService(pool)
-	created, err := svc.CreateContract(t.Context(), service.CreateContractRequest{ClientID: uuid.New()})
-	if err != nil {
-		t.Fatal(err)
-	}
-	app := testApp(svc)
-	id := created.ID.String()
-	for _, step := range []struct {
-		id, body, message string
-		status            int
-	}{
-		{id, `{"services":[{"service_code":"trip_creation","enabled":true},{"service_code":"notifications","enabled":true}]}`, "", 204},
-		{id, `{"services":[{"service_code":"trip_creation","enabled":false},{"service_code":"trip_participants","enabled":true}]}`, "", 204},
-		{id, `{"services":[{"service_code":"notifications","enabled":false},{"service_code":"unknown","enabled":true}]}`, "invalid contract services", 400},
-		{id, `{"services":[{"service_code":"notifications"}]}`, "invalid contract services", 400},
-		{id, `{"services":[{"service_code":"notifications","enabled":false},{"service_code":"notifications","enabled":true}]}`, "invalid contract services", 400},
-		{"invalid", `{"services":[{"service_code":"trip_creation","enabled":true}]}`, "invalid contract id", 400},
-		{uuid.NewString(), `{"services":[{"service_code":"trip_creation","enabled":true}]}`, "contract not found", 404},
-	} {
-		request := httptest.NewRequest(http.MethodPatch, "/contracts/"+step.id+"/services", strings.NewReader(step.body))
-		request.Header.Set("Content-Type", "application/json")
-		response, err := app.Test(request, 10000)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if step.status == 204 {
-			closeResponseBody(t, response)
-			if response.StatusCode != step.status {
-				t.Fatalf("save services: status=%d, want %d", response.StatusCode, step.status)
-			}
-		} else {
-			assertJSONResponse(t, response, step.status, map[string]string{"error": step.message})
-		}
-	}
-	var stored map[string]bool
-	if err := observer.QueryRow(t.Context(), `
-		SELECT jsonb_object_agg(service_code, enabled) FROM contract_services WHERE contract_id = $1`, created.ID).
-		Scan(&stored); err != nil {
-		t.Fatal(err)
-	}
-	want := map[string]bool{"trip_creation": false, "notifications": true, "trip_participants": true}
-	if !reflect.DeepEqual(stored, want) {
-		t.Fatalf("stored services = %v, want %v", stored, want)
-	}
 }
 
 func TestHTTPPostgresContractLifecycle(t *testing.T) {

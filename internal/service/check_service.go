@@ -22,9 +22,8 @@ type CheckServiceResponse struct {
 }
 
 func (s *Service) CheckService(ctx context.Context, request CheckServiceRequest) (CheckServiceResponse, error) {
-	clientID, err := domain.NewClientID(request.ClientID)
-	if err != nil {
-		return CheckServiceResponse{}, err
+	if request.ClientID == uuid.Nil {
+		return CheckServiceResponse{}, domain.ErrInvalidClientID
 	}
 	if request.ServiceCode == "" {
 		return CheckServiceResponse{}, domain.ErrInvalidContractServices
@@ -35,7 +34,7 @@ func (s *Service) CheckService(ctx context.Context, request CheckServiceRequest)
 	}
 	defer rollbackTransaction(tx)
 
-	contract, enabled, err := repository.NewContractRepository(tx).GetForServiceCheck(ctx, clientID, request.ServiceCode)
+	contract, enabled, err := repository.NewContractRepository(tx).GetForServiceCheck(ctx, request.ClientID, request.ServiceCode)
 	if errors.Is(err, repository.ErrContractNotFound) {
 		return CheckServiceResponse{Allowed: false, Reason: "contract_not_found"}, nil
 	}

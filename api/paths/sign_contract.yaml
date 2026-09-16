@@ -1,0 +1,25 @@
+post:
+  operationId: sign_contract
+  summary: Sign an existing draft contract
+  description: Loads an existing contract and changes its state from draft to active in a transaction.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../contract.yaml#/components/schemas/SignContractRequest'
+  responses:
+    '200':
+      description: Contract signed and saved
+      content:
+        application/json:
+          schema:
+            $ref: '../contract.yaml#/components/schemas/SignContractResponse'
+    '400':
+      $ref: '../contract.yaml#/components/responses/BadRequest'
+    '404':
+      $ref: '../contract.yaml#/components/responses/NotFound'
+    '409':
+      $ref: '../contract.yaml#/components/responses/Conflict'
+    '500':
+      $ref: '../contract.yaml#/components/responses/InternalServerError'

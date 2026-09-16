@@ -28,9 +28,8 @@ func (s *Service) CreateContract(
 	ctx context.Context,
 	request CreateContractRequest,
 ) (CreateContractResponse, error) {
-	clientID, err := domain.NewClientID(request.ClientID)
-	if err != nil {
-		return CreateContractResponse{}, err
+	if request.ClientID == uuid.Nil {
+		return CreateContractResponse{}, domain.ErrInvalidClientID
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -39,7 +38,7 @@ func (s *Service) CreateContract(
 	defer rollbackTransaction(tx)
 
 	created, err := domain.CreateContract(domain.CreateContractRequest{
-		ClientID:  clientID,
+		ClientID:  request.ClientID,
 		ExpiredAt: request.ExpiredAt,
 	})
 	if err != nil {
@@ -71,7 +70,7 @@ func (s *Service) CreateContract(
 
 	return CreateContractResponse{
 		ID:        contract.ID().Value(),
-		ClientID:  contract.ClientID().Value(),
+		ClientID:  contract.ClientID(),
 		Status:    string(contract.Status()),
 		CreatedAt: contract.CreatedAt(),
 		UpdatedAt: contract.UpdatedAt(),

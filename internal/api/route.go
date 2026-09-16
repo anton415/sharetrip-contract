@@ -11,7 +11,7 @@ import (
 type ContractService interface {
 	CheckService(context.Context, service.CheckServiceRequest) (service.CheckServiceResponse, error)
 
-	UpsertContractServices(context.Context, service.UpsertContractServicesRequest) error
+	ConfigureContractServices(context.Context, service.ConfigureContractServicesRequest) error
 
 	GetContract(
 		context.Context,

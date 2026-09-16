@@ -14,38 +14,42 @@ type ContractService struct {
 	Enabled     bool
 }
 
-type UpsertContractServicesRequest struct {
+type ConfigureContractServicesRequest struct {
 	ContractID uuid.UUID
 	Services   []ContractService
 }
 
-func (s *Service) UpsertContractServices(ctx context.Context, request UpsertContractServicesRequest) error {
+func (s *Service) ConfigureContractServices(ctx context.Context, request ConfigureContractServicesRequest) error {
 	id, err := domain.NewContractID(request.ContractID)
 	if err != nil {
 		return err
 	}
 	services := make([]domain.ContractService, len(request.Services))
-	for i, item := range request.Services {
-		services[i] = domain.ContractService{ServiceCode: item.ServiceCode, Enabled: item.Enabled}
+	for index, item := range request.Services {
+		services[index] = domain.ContractService{ServiceCode: item.ServiceCode, Enabled: item.Enabled}
 	}
 	if err := domain.ValidateContractServices(services); err != nil {
 		return err
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin upsert contract services: %w", err)
+		return fmt.Errorf("begin configure contract services: %w", err)
 	}
 	defer rollbackTransaction(tx)
 
 	repo := repository.NewContractRepository(tx)
-	if _, err := repo.GetByIDForUpdate(ctx, id); err != nil {
+	contract, err := repo.GetByIDForUpdate(ctx, id)
+	if err != nil {
 		return err
 	}
-	if err := repo.UpsertServices(ctx, id, services); err != nil {
+	if contract.Status() != domain.ContractStatusDraft {
+		return domain.ErrContractNotDraft
+	}
+	if err := repo.ConfigureServices(ctx, id, services); err != nil {
 		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit upsert contract services: %w", err)
+		return fmt.Errorf("commit configure contract services: %w", err)
 	}
 	return nil
 }

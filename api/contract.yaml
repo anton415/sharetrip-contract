@@ -4,157 +4,19 @@ info:
   version: 0.1.0
 paths:
   /health:
-    get:
-      operationId: health
-      summary: Check HTTP server availability
-      responses:
-        '200':
-          description: HTTP server is running
-          content:
-            text/plain:
-              schema:
-                type: string
-              example: OK
+    $ref: './paths/health.yaml'
   /contracts/check-service:
-    post:
-      operationId: check_service
-      summary: Check whether a company can use a service
-      description: Requires an active, unexpired contract with the requested service enabled. Business denials return HTTP 200.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckServiceRequest'
-      responses:
-        '200':
-          description: Service availability decision
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CheckServiceResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-  /contracts/{contract_id}/services:
-    patch:
-      operationId: upsert_contract_services
-      summary: Add or update contract services
-      description: Adds or updates the supplied services atomically. Omitted services are preserved.
-      parameters:
-        - name: contract_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            x-go-type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpsertContractServicesRequest'
-      responses:
-        '204':
-          description: Services saved
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+    $ref: './paths/check_service.yaml'
+  /contracts/{contract_id}/configure-services:
+    $ref: './paths/configure_contract_services.yaml'
   /contracts/{contract_id}:
-    get:
-      operationId: get_contract
-      summary: Get a contract by ID
-      parameters:
-        - name: contract_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            x-go-type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/ContractFound'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+    $ref: './paths/get_contract.yaml'
   /clients/{client_id}/contracts/active:
-    get:
-      operationId: get_active_contract
-      summary: Get the company's contract with active status
-      parameters:
-        - name: client_id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            x-go-type: string
-      responses:
-        '200':
-          $ref: '#/components/responses/ContractFound'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+    $ref: './paths/get_active_contract.yaml'
   /create_contract:
-    post:
-      operationId: create_contract
-      summary: Create a draft contract
-      description: Creates a draft contract and saves it in PostgreSQL.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateContractRequest'
-      responses:
-        '201':
-          description: Draft contract created and saved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateContractResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+    $ref: './paths/create_contract.yaml'
   /sign_contract:
-    post:
-      operationId: sign_contract
-      summary: Sign an existing draft contract
-      description: Loads an existing contract and changes its state from draft to active in a transaction.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SignContractRequest'
-      responses:
-        '200':
-          description: Contract signed and saved
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignContractResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+    $ref: './paths/sign_contract.yaml'
 components:
   responses:
     ContractFound:
@@ -171,6 +33,12 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
     Conflict:
       description: Contract cannot be signed in its current state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ContractNotDraft:
+      description: Contract services can be configured only for a draft contract
       content:
         application/json:
           schema:
@@ -209,7 +77,7 @@ components:
           type: string
           enum: [service_allowed, contract_not_found, contract_not_active, contract_expired, service_not_allowed]
       additionalProperties: false
-    UpsertContractServicesRequest:
+    ConfigureContractServicesRequest:
       type: object
       required: [services]
       properties:

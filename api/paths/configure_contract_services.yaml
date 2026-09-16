@@ -1,0 +1,29 @@
+post:
+  operationId: configure_contract_services
+  summary: Configure services for a draft contract
+  description: Replaces the configured services before the contract is signed.
+  parameters:
+    - name: contract_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        x-go-type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../contract.yaml#/components/schemas/ConfigureContractServicesRequest'
+  responses:
+    '204':
+      description: Contract services configured
+    '400':
+      $ref: '../contract.yaml#/components/responses/BadRequest'
+    '404':
+      $ref: '../contract.yaml#/components/responses/NotFound'
+    '409':
+      $ref: '../contract.yaml#/components/responses/ContractNotDraft'
+    '500':
+      $ref: '../contract.yaml#/components/responses/InternalServerError'

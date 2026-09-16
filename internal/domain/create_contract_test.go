@@ -11,10 +11,7 @@ import (
 
 func TestCreateContract(t *testing.T) {
 	t.Parallel()
-	clientID, err := NewClientID(uuid.New())
-	if err != nil {
-		t.Fatalf("NewClientID(): %v", err)
-	}
+	clientID := uuid.New()
 	expiredAt := time.Now().UTC().Add(24 * time.Hour)
 	tests := []struct {
 		name      string

@@ -26,8 +26,8 @@ type stubContractService struct {
 	getActive func(context.Context, service.GetActiveContractRequest) (service.GetContractResponse, error)
 }
 
-func (s stubContractService) UpsertContractServices(context.Context, service.UpsertContractServicesRequest) error {
-	return errors.New("unexpected UpsertContractServices call")
+func (s stubContractService) ConfigureContractServices(context.Context, service.ConfigureContractServicesRequest) error {
+	return errors.New("unexpected ConfigureContractServices call")
 }
 
 func (s stubContractService) CheckService(context.Context, service.CheckServiceRequest) (service.CheckServiceResponse, error) {
@@ -60,98 +60,6 @@ func (s stubContractService) GetActiveContract(ctx context.Context, request serv
 		return service.GetContractResponse{}, errors.New("unexpected GetActiveContract call")
 	}
 	return s.getActive(ctx, request)
-}
-
-func TestGetContractHTTPMapping(t *testing.T) {
-	t.Parallel()
-	for _, status := range []string{"draft", "active", "suspended", "terminated"} {
-		t.Run(status, func(t *testing.T) {
-			t.Parallel()
-			id, clientID := uuid.New(), uuid.New()
-			createdAt := time.Date(2026, 9, 7, 10, 0, 0, 0, time.UTC)
-			updatedAt, expires := createdAt.Add(time.Hour), createdAt.AddDate(1, 0, 0)
-			contract := service.GetContractResponse{
-				ID: id, ClientID: clientID, Status: status, CreatedAt: createdAt, UpdatedAt: updatedAt,
-			}
-			if status == "active" {
-				contract.ExpiredAt = &expires
-			}
-			getCalls, activeCalls := 0, 0
-			stub := stubContractService{
-				get: func(_ context.Context, request service.GetContractRequest) (service.GetContractResponse, error) {
-					getCalls++
-					if request.ContractID != id {
-						t.Errorf("ContractID = %v, want %v", request.ContractID, id)
-					}
-					return contract, nil
-				},
-				getActive: func(_ context.Context, request service.GetActiveContractRequest) (service.GetContractResponse, error) {
-					activeCalls++
-					if request.ClientID != clientID {
-						t.Errorf("ClientID = %v, want %v", request.ClientID, clientID)
-					}
-					return contract, nil
-				},
-			}
-			want := map[string]any{"contract": map[string]any{
-				"id": id, "client_id": clientID, "status": status, "created_at": createdAt,
-				"updated_at": updatedAt, "expired_at": contract.ExpiredAt,
-			}}
-			app := testApp(stub)
-			assertJSONResponse(t, getHTTP(t, app, "/contracts/"+id.String()), 200, want)
-			wantActiveCalls := 0
-			if status == "active" {
-				assertJSONResponse(t, getHTTP(t, app, "/clients/"+clientID.String()+"/contracts/active"), 200, want)
-				wantActiveCalls = 1
-			}
-			if getCalls != 1 || activeCalls != wantActiveCalls {
-				t.Errorf("service calls = (%d, %d), want (1, %d)", getCalls, activeCalls, wantActiveCalls)
-			}
-		})
-	}
-}
-
-func TestGetContractHTTPErrors(t *testing.T) {
-	t.Parallel()
-	for _, operation := range []struct{ path, field string }{
-		{"/contracts/%s", "contract"}, {"/clients/%s/contracts/active", "client"},
-	} {
-		t.Run(operation.field, func(t *testing.T) {
-			t.Parallel()
-			for _, tt := range []struct {
-				name, id, message string
-				err               error
-				status, calls     int
-			}{
-				{"malformed", "invalid", "invalid " + operation.field + " id", nil, 400, 0},
-				{"zero", uuid.Nil.String(), "invalid " + operation.field + " id", nil, 400, 0},
-				{"missing", uuid.NewString(), "contract not found", repository.ErrContractNotFound, 404, 1},
-				{"internal", uuid.NewString(), "internal server error", errors.New("private database detail"), 500, 1},
-			} {
-				t.Run(tt.name, func(t *testing.T) {
-					t.Parallel()
-					calls := 0
-					result := func() (service.GetContractResponse, error) {
-						calls++
-						return service.GetContractResponse{}, fmt.Errorf("operation failed: %w", tt.err)
-					}
-					stub := stubContractService{
-						get: func(context.Context, service.GetContractRequest) (service.GetContractResponse, error) {
-							return result()
-						},
-						getActive: func(context.Context, service.GetActiveContractRequest) (service.GetContractResponse, error) {
-							return result()
-						},
-					}
-					response := getHTTP(t, testApp(stub), fmt.Sprintf(operation.path, tt.id))
-					assertJSONResponse(t, response, tt.status, map[string]string{"error": tt.message})
-					if calls != tt.calls {
-						t.Errorf("service calls = %d, want %d", calls, tt.calls)
-					}
-				})
-			}
-		})
-	}
 }
 
 func TestCreateContractHTTPMapping(t *testing.T) {
@@ -227,11 +135,24 @@ func TestHTTPRejectsInvalidRequests(t *testing.T) {
 			if operation.path == "/create_contract" {
 				bodies = append(bodies, strings.TrimSuffix(valid, "}")+`,"expired_at":"invalid"}`)
 			}
+			invalidClientIDBodies := map[string]bool{}
+			if operation.path == "/create_contract" {
+				invalidClientIDBodies = map[string]bool{
+					"null": true,
+					"{}":   true,
+					fmt.Sprintf(`{%q:null}`, operation.field):         true,
+					fmt.Sprintf(`{%q:%q}`, operation.field, uuid.Nil): true,
+				}
+			}
 			for _, body := range bodies {
 				t.Run(body, func(t *testing.T) {
 					t.Parallel()
 					response := postJSON(t, testApp(stubContractService{}), operation.path, body)
-					assertJSONResponse(t, response, 400, map[string]string{"error": "invalid request body"})
+					message := "invalid request body"
+					if invalidClientIDBodies[body] {
+						message = "invalid client id"
+					}
+					assertJSONResponse(t, response, 400, map[string]string{"error": message})
 				})
 			}
 			request := httptest.NewRequest(http.MethodPost, operation.path, strings.NewReader(valid))

@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) GetContract(ctx *fiber.Ctx, contractID string) error {
-	id, err := uuid.Parse(contractID)
+func (s *Server) GetActiveContract(ctx *fiber.Ctx, clientID string) error {
+	id, err := uuid.Parse(clientID)
 	if err != nil || id == uuid.Nil {
-		return writeError(ctx, domain.ErrInvalidContractID)
+		return writeError(ctx, domain.ErrInvalidClientID)
 	}
-	response, err := s.contractService.GetContract(ctx.UserContext(), service.GetContractRequest{ContractID: id})
+	response, err := s.contractService.GetActiveContract(ctx.UserContext(), service.GetActiveContractRequest{ClientID: id})
 	if err != nil {
 		return writeError(ctx, err)
 	}

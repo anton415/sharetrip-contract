@@ -52,9 +52,9 @@ func (s *Service) SignContract(
 		)
 	}
 
-	if err := repo.Update(ctx, signed.Contract); err != nil {
+	if err := repo.SignContract(ctx, signed.Contract.ID(), signed.Contract.UpdatedAt()); err != nil {
 		return SignContractResponse{}, fmt.Errorf(
-			"update contract: %w", err,
+			"persist signed contract: %w", err,
 		)
 	}
 	if err := tx.Commit(ctx); err != nil {

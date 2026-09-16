@@ -13,11 +13,6 @@ func toDomainContract(row entity.Contract) (domain.Contract, error) {
 		return domain.Contract{}, fmt.Errorf("restore contract id: %w", err)
 	}
 
-	clientID, err := domain.NewClientID(row.ClientID)
-	if err != nil {
-		return domain.Contract{}, fmt.Errorf("restore client id: %w", err)
-	}
-
 	status, err := domain.NewContractStatus(row.Status)
 	if err != nil {
 		return domain.Contract{}, fmt.Errorf("restore contract status: %w", err)
@@ -25,7 +20,7 @@ func toDomainContract(row entity.Contract) (domain.Contract, error) {
 
 	return domain.RestoreContract(
 		id,
-		clientID,
+		row.ClientID,
 		status,
 		row.CreatedAt,
 		row.UpdatedAt,
@@ -36,7 +31,7 @@ func toDomainContract(row entity.Contract) (domain.Contract, error) {
 func toEntityContract(contract domain.Contract) entity.Contract {
 	return entity.Contract{
 		ID:        contract.ID().Value(),
-		ClientID:  contract.ClientID().Value(),
+		ClientID:  contract.ClientID(),
 		Status:    string(contract.Status()),
 		CreatedAt: contract.CreatedAt(),
 		UpdatedAt: contract.UpdatedAt(),

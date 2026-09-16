@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/anton415/sharetrip-contract/gen"
+	"github.com/anton415/sharetrip-contract/internal/domain"
 	"github.com/anton415/sharetrip-contract/internal/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -9,11 +10,13 @@ import (
 
 func (s *Server) CreateContract(ctx *fiber.Ctx) error {
 	var request gen.CreateContractRequest
-	if err := parseRequest(ctx, &request); err != nil ||
-		request.ClientId == uuid.Nil {
+	if err := parseRequest(ctx, &request); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(gen.ErrorResponse{
 			Error: "invalid request body",
 		})
+	}
+	if request.ClientId == uuid.Nil {
+		return writeError(ctx, domain.ErrInvalidClientID)
 	}
 
 	response, err := s.contractService.CreateContract(

@@ -8,23 +8,23 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) UpsertContractServices(ctx *fiber.Ctx, contractID string) error {
+func (s *Server) ConfigureContractServices(ctx *fiber.Ctx, contractID string) error {
 	id, err := uuid.Parse(contractID)
 	if err != nil || id == uuid.Nil {
 		return writeError(ctx, domain.ErrInvalidContractID)
 	}
-	var request gen.UpsertContractServicesRequest
+	var request gen.ConfigureContractServicesRequest
 	if err := parseRequest(ctx, &request); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(gen.ErrorResponse{Error: "invalid request body"})
 	}
 	services := make([]service.ContractService, len(request.Services))
-	for i, item := range request.Services {
+	for index, item := range request.Services {
 		if item.Enabled == nil {
 			return writeError(ctx, domain.ErrInvalidContractServices)
 		}
-		services[i] = service.ContractService{ServiceCode: string(item.ServiceCode), Enabled: *item.Enabled}
+		services[index] = service.ContractService{ServiceCode: string(item.ServiceCode), Enabled: *item.Enabled}
 	}
-	if err := s.contractService.UpsertContractServices(ctx.UserContext(), service.UpsertContractServicesRequest{
+	if err := s.contractService.ConfigureContractServices(ctx.UserContext(), service.ConfigureContractServicesRequest{
 		ContractID: id,
 		Services:   services,
 	}); err != nil {

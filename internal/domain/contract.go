@@ -8,7 +8,7 @@ import (
 
 type Contract struct {
 	id        ContractID
-	clientID  ClientID
+	clientID  uuid.UUID
 	status    ContractStatus
 	createdAt time.Time
 	updatedAt time.Time
@@ -23,7 +23,7 @@ func (c Contract) Status() ContractStatus {
 	return c.status
 }
 
-func (c Contract) ClientID() ClientID {
+func (c Contract) ClientID() uuid.UUID {
 	return c.clientID
 }
 
@@ -57,7 +57,7 @@ func (c *Contract) Sign(now time.Time) error {
 
 func RestoreContract(
 	id ContractID,
-	clientID ClientID,
+	clientID uuid.UUID,
 	status ContractStatus,
 	createdAt time.Time,
 	updatedAt time.Time,
@@ -66,7 +66,7 @@ func RestoreContract(
 	if id.Value() == uuid.Nil {
 		return Contract{}, ErrInvalidContractID
 	}
-	if clientID.Value() == uuid.Nil {
+	if clientID == uuid.Nil {
 		return Contract{}, ErrInvalidClientID
 	}
 	if _, err := NewContractStatus(string(status)); err != nil {
