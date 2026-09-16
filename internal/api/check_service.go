@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Server) CheckService(ctx *fiber.Ctx) error {
-	var request gen.CheckServiceRequest
+	var request gen.CheckServiceJSONBody
 	if err := parseRequest(ctx, &request); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(gen.ErrorResponse{Error: "invalid request body"})
 	}
@@ -18,8 +18,8 @@ func (s *Server) CheckService(ctx *fiber.Ctx) error {
 	if err != nil {
 		return writeError(ctx, err)
 	}
-	return ctx.Status(fiber.StatusOK).JSON(gen.CheckServiceResponse{
-		Allowed: response.Allowed,
-		Reason:  gen.CheckServiceResponseReason(response.Reason),
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"allowed": response.Allowed,
+		"reason":  response.Reason,
 	})
 }

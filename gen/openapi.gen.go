@@ -12,33 +12,6 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// Defines values for CheckServiceResponseReason.
-const (
-	ContractExpired   CheckServiceResponseReason = "contract_expired"
-	ContractNotActive CheckServiceResponseReason = "contract_not_active"
-	ContractNotFound  CheckServiceResponseReason = "contract_not_found"
-	ServiceAllowed    CheckServiceResponseReason = "service_allowed"
-	ServiceNotAllowed CheckServiceResponseReason = "service_not_allowed"
-)
-
-// Valid indicates whether the value is a known member of the CheckServiceResponseReason enum.
-func (e CheckServiceResponseReason) Valid() bool {
-	switch e {
-	case ContractExpired:
-		return true
-	case ContractNotActive:
-		return true
-	case ContractNotFound:
-		return true
-	case ServiceAllowed:
-		return true
-	case ServiceNotAllowed:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ContractServiceInputServiceCode.
 const (
 	Notifications    ContractServiceInputServiceCode = "notifications"
@@ -87,20 +60,32 @@ func (e ContractStatus) Valid() bool {
 	}
 }
 
-// CheckServiceRequest defines model for CheckServiceRequest.
-type CheckServiceRequest struct {
-	ClientId    openapi_types.UUID `json:"client_id"`
-	ServiceCode string             `json:"service_code"`
-}
+// Defines values for CheckService200JSONResponseBodyReason.
+const (
+	ContractExpired   CheckService200JSONResponseBodyReason = "contract_expired"
+	ContractNotActive CheckService200JSONResponseBodyReason = "contract_not_active"
+	ContractNotFound  CheckService200JSONResponseBodyReason = "contract_not_found"
+	ServiceAllowed    CheckService200JSONResponseBodyReason = "service_allowed"
+	ServiceNotAllowed CheckService200JSONResponseBodyReason = "service_not_allowed"
+)
 
-// CheckServiceResponse defines model for CheckServiceResponse.
-type CheckServiceResponse struct {
-	Allowed bool                       `json:"allowed"`
-	Reason  CheckServiceResponseReason `json:"reason"`
+// Valid indicates whether the value is a known member of the CheckService200JSONResponseBodyReason enum.
+func (e CheckService200JSONResponseBodyReason) Valid() bool {
+	switch e {
+	case ContractExpired:
+		return true
+	case ContractNotActive:
+		return true
+	case ContractNotFound:
+		return true
+	case ServiceAllowed:
+		return true
+	case ServiceNotAllowed:
+		return true
+	default:
+		return false
+	}
 }
-
-// CheckServiceResponseReason defines model for CheckServiceResponse.Reason.
-type CheckServiceResponseReason string
 
 // ConfigureContractServicesRequest defines model for ConfigureContractServicesRequest.
 type ConfigureContractServicesRequest struct {
@@ -185,8 +170,17 @@ type InternalServerError = ErrorResponse
 // NotFound defines model for NotFound.
 type NotFound = ErrorResponse
 
+// CheckServiceJSONBody defines parameters for CheckService.
+type CheckServiceJSONBody struct {
+	ClientId    openapi_types.UUID `json:"client_id"`
+	ServiceCode string             `json:"service_code"`
+}
+
+// CheckService200JSONResponseBodyReason defines parameters for CheckService.
+type CheckService200JSONResponseBodyReason string
+
 // CheckServiceJSONRequestBody defines body for CheckService for application/json ContentType.
-type CheckServiceJSONRequestBody = CheckServiceRequest
+type CheckServiceJSONRequestBody CheckServiceJSONBody
 
 // ConfigureContractServicesJSONRequestBody defines body for ConfigureContractServices for application/json ContentType.
 type ConfigureContractServicesJSONRequestBody = ConfigureContractServicesRequest

@@ -7,7 +7,16 @@ post:
     content:
       application/json:
         schema:
-          $ref: '../contract.yaml#/components/schemas/CheckServiceRequest'
+          type: object
+          required: [client_id, service_code]
+          properties:
+            client_id:
+              type: string
+              format: uuid
+            service_code:
+              type: string
+              minLength: 1
+          additionalProperties: false
         example:
           client_id: 550e8400-e29b-41d4-a716-446655440001
           service_code: trip_creation
@@ -17,7 +26,15 @@ post:
       content:
         application/json:
           schema:
-            $ref: '../contract.yaml#/components/schemas/CheckServiceResponse'
+            type: object
+            required: [allowed, reason]
+            properties:
+              allowed:
+                type: boolean
+              reason:
+                type: string
+                enum: [service_allowed, contract_not_found, contract_not_active, contract_expired, service_not_allowed]
+            additionalProperties: false
           example:
             allowed: true
             reason: service_allowed

@@ -56,27 +56,6 @@ components:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    CheckServiceRequest:
-      type: object
-      required: [client_id, service_code]
-      properties:
-        client_id:
-          type: string
-          format: uuid
-        service_code:
-          type: string
-          minLength: 1
-      additionalProperties: false
-    CheckServiceResponse:
-      type: object
-      required: [allowed, reason]
-      properties:
-        allowed:
-          type: boolean
-        reason:
-          type: string
-          enum: [service_allowed, contract_not_found, contract_not_active, contract_expired, service_not_allowed]
-      additionalProperties: false
     ConfigureContractServicesRequest:
       type: object
       required: [services]
