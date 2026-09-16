@@ -8,6 +8,9 @@ post:
       application/json:
         schema:
           $ref: '../contract.yaml#/components/schemas/CheckServiceRequest'
+        example:
+          client_id: 550e8400-e29b-41d4-a716-446655440001
+          service_code: trip_creation
   responses:
     '200':
       description: Service availability decision
@@ -15,6 +18,9 @@ post:
         application/json:
           schema:
             $ref: '../contract.yaml#/components/schemas/CheckServiceResponse'
+          example:
+            allowed: true
+            reason: service_allowed
     '400':
       $ref: '../contract.yaml#/components/responses/BadRequest'
     '500':
