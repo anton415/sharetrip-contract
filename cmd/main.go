@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	contractapi "github.com/anton415/sharetrip-contract/internal/api"
+	"github.com/anton415/sharetrip-contract/internal/config"
 	"github.com/anton415/sharetrip-contract/internal/service"
 
 	"github.com/gofiber/contrib/swagger"
@@ -16,13 +16,13 @@ import (
 )
 
 func main() {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		log.Fatal("DATABASE_URL is required")
-	}
-	pool, err := pgxpool.New(context.Background(), dsn)
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal(fmt.Errorf("create PostgreSQL pool: %w", err))
+		log.Fatal(err)
+	}
+	pool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("create PostgreSQL pool failed")
 	}
 
 	pingCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -30,7 +30,7 @@ func main() {
 	cancel()
 	if err != nil {
 		pool.Close()
-		log.Fatal(fmt.Errorf("ping PostgreSQL: %w", err))
+		log.Fatal("ping PostgreSQL failed")
 	}
 	contractService := service.NewService(pool)
 
@@ -43,11 +43,7 @@ func main() {
 	}))
 	contractapi.RegisterRoutes(app, contractService)
 
-	addr := os.Getenv("HTTP_ADDR")
-	if addr == "" {
-		addr = ":8080"
-	}
-	if err := app.Listen(addr); err != nil {
+	if err := app.Listen(cfg.HTTPAddr); err != nil {
 		pool.Close()
 		log.Fatal(fmt.Errorf("listen HTTP: %w", err))
 	}
