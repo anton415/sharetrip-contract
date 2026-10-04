@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/anton415/sharetrip-contract/gen"
 	"github.com/anton415/sharetrip-contract/internal/service"
@@ -36,12 +37,13 @@ type ContractService interface {
 
 type Server struct {
 	contractService ContractService
+	logger          *slog.Logger
 }
 
 var _ gen.ServerInterface = (*Server)(nil)
 
 func NewServer(contractService ContractService) *Server {
-	return &Server{contractService: contractService}
+	return &Server{contractService: contractService, logger: slog.Default()}
 }
 
 func RegisterRoutes(router fiber.Router, contractService ContractService) {

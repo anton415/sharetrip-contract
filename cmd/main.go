@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
+	"os"
 	"time"
 
 	contractapi "github.com/anton415/sharetrip-contract/internal/api"
@@ -16,6 +18,7 @@ import (
 )
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
