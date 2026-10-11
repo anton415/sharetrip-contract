@@ -51,5 +51,8 @@ func RegisterRoutes(router fiber.Router, contractService ContractService) {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
 
-	gen.RegisterHandlers(router, NewServer(contractService))
+	server := NewServer(contractService)
+	gen.RegisterHandlersWithOptions(router, server, gen.FiberServerOptions{
+		HandlerMiddlewares: []gen.HandlerMiddlewareFunc{server.checkServiceMiddleware},
+	})
 }

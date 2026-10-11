@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"log/slog"
 
 	"github.com/anton415/sharetrip-contract/gen"
 	"github.com/anton415/sharetrip-contract/internal/domain"
@@ -40,7 +39,7 @@ func writeError(ctx *fiber.Ctx, err error) error {
 		message = "contract services can be configured only for a draft contract"
 
 	default:
-		slog.Error("contract request failed", "error", err)
+		requestLogger(ctx.UserContext()).ErrorContext(ctx.UserContext(), "contract request failed", "result", "error", "error", err)
 	}
 
 	return ctx.Status(status).JSON(gen.ErrorResponse{
